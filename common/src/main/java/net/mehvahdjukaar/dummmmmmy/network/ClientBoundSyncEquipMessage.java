@@ -8,8 +8,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
-
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 public class ClientBoundSyncEquipMessage implements Message {
     private final int entityID;
@@ -22,7 +21,7 @@ public class ClientBoundSyncEquipMessage implements Message {
         this.itemstack = buf.readItem();
     }
 
-    public ClientBoundSyncEquipMessage(int entityId, int slotId, @Nonnull ItemStack itemstack) {
+    public ClientBoundSyncEquipMessage(int entityId, int slotId, @NotNull ItemStack itemstack) {
         this.entityID = entityId;
         this.slotId = slotId;
         this.itemstack = itemstack.copy();

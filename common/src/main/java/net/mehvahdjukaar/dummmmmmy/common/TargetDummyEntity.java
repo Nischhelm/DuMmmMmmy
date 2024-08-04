@@ -414,9 +414,14 @@ public class TargetDummyEntity extends Mob {
                 if (PlatHelper.getPlatform().isForge()) {
                     CombatEntry currentCombatEntry = getLastEntry();
                     //Is same damage as current one. Sanity-check, I guess
-                    if (currentCombatEntry != null && getCombatTracker().lastDamageTime == this.tickCount &&
-                            DoubleMath.fuzzyEquals(damage, currentCombatEntry.damage(), 0.000001)) {
+                    if (currentCombatEntry != null && getCombatTracker().lastDamageTime == this.tickCount
+                            //idk why but some rounding errors could occur. we still want to sanity check this i think? or not
+                            //&& DoubleMath.fuzzyEquals(damage, currentCombatEntry.damage(), 0.0001)
+                    ) {
                         actualSource = currentCombatEntry.source();
+                        if (Math.abs(damage - currentCombatEntry.damage()) > 0.0001) {
+                            int error = 0;
+                        }
                     }
                 } else actualSource = currentDamageSource;
 
@@ -450,6 +455,7 @@ public class TargetDummyEntity extends Mob {
     }
 
     private void showDamageAndAnimationsToClients(float damage, @Nullable DamageSource source) {
+
         //if damage is in the same tick, it gets added otherwise we reset
         // this is also used server side to track added damage
         if (this.lastTickActuallyDamaged != this.tickCount) {

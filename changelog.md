@@ -1,2 +1,1 @@
-no changes
-Just recompiled because mixin refmap decided it was its day off in the previous version...
+fixed an issue where damage numbers would sometime not be shown when damage was small

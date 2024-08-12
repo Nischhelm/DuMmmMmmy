@@ -1,1 +1,1 @@
-fixed an issue where damage numbers would sometime not be shown when damage was small
+fixed an issue with spawn packet on fabric

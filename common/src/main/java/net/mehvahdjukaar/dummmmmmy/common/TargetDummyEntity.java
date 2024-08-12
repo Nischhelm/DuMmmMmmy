@@ -18,6 +18,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -62,8 +63,7 @@ public class TargetDummyEntity extends Mob {
     //has just been hit by critical? server side
     private final List<CritRecord> critRecordsThisTick = new ArrayList<>();
     private DummyMobType mobType = DummyMobType.UNDEFINED;
-    //position of damage number in the semicircle
-    private int damageNumberPos = 0;
+
     //needed because it's private, and we aren't calling le tick
     private final NonNullList<ItemStack> lastArmorItems = NonNullList.withSize(4, ItemStack.EMPTY);
 
@@ -75,6 +75,8 @@ public class TargetDummyEntity extends Mob {
 
     private float prevAnimationPosition = 0;
     private float animationPosition;
+    //position of damage number in the semicircle
+    private int damageNumberPos = 0;
 
     // used to have an independent start for the animation, otherwise the phase of the animation depends ont he damage dealt
     private float shakeAmount = 0;
@@ -114,15 +116,14 @@ public class TargetDummyEntity extends Mob {
     }
 
     @Override
-    public Packet<ClientGamePacketListener> getAddEntityPacket() {
-        return PlatHelper.getEntitySpawnPacket(this);
+    public void setItemSlot(EquipmentSlot slot, ItemStack stack) {
+        super.setItemSlot(slot, stack);
     }
 
     @Override
     public void addAdditionalSaveData(CompoundTag tag) {
         super.addAdditionalSaveData(tag);
         tag.putInt("Type", this.mobType.ordinal());
-        tag.putInt("NumberPos", this.damageNumberPos);
         tag.putBoolean("Sheared", this.isSheared());
         if (this.unbreakable) tag.putBoolean("Unbreakable", true);
         this.applyEquipmentModifiers();
@@ -132,7 +133,6 @@ public class TargetDummyEntity extends Mob {
     public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
         this.mobType = DummyMobType.values()[tag.getInt("Type")];
-        this.damageNumberPos = tag.getInt("NumberPos");
         this.setSheared(tag.getBoolean("Sheared"));
         if (tag.contains("unbreakable")) {
             this.unbreakable = tag.getBoolean("unbreakable");

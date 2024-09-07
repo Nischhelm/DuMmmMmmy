@@ -76,19 +76,18 @@ public class TargetDummyModel<T extends TargetDummyEntity> extends HumanoidModel
     }
 
     @Override
-    public void renderToBuffer(PoseStack matrixStackIn, VertexConsumer bufferIn, int packedLightIn, int overlayIn, float red, float green,
-                               float blue, float alpha) {
+    public void renderToBuffer(PoseStack matrixStackIn, VertexConsumer bufferIn, int packedLightIn, int overlayIn, int color) {
         int overlay = OverlayTexture.NO_OVERLAY;
         matrixStackIn.pushPose();
-        this.standPlate.render(matrixStackIn, bufferIn, packedLightIn, overlay, red, green, blue, alpha);
+        this.standPlate.render(matrixStackIn, bufferIn, packedLightIn, overlay, color);
 
-        this.head.render(matrixStackIn, bufferIn, packedLightIn, overlay, red, green, blue, alpha);
-        this.rightArm.render(matrixStackIn, bufferIn, packedLightIn, overlay, red, green, blue, alpha);
-        this.leftArm.render(matrixStackIn, bufferIn, packedLightIn, overlay, red, green, blue, alpha);
-        this.body.render(matrixStackIn, bufferIn, packedLightIn, overlay, red, green, blue, alpha);
-        this.leftLeg.render(matrixStackIn, bufferIn, packedLightIn, overlay, red, green, blue, alpha);
+        this.head.render(matrixStackIn, bufferIn, packedLightIn, overlay, color);
+        this.rightArm.render(matrixStackIn, bufferIn, packedLightIn, overlay, color);
+        this.leftArm.render(matrixStackIn, bufferIn, packedLightIn, overlay, color);
+        this.body.render(matrixStackIn, bufferIn, packedLightIn, overlay, color);
+        this.leftLeg.render(matrixStackIn, bufferIn, packedLightIn, overlay, color);
 
-        this.hat.render(matrixStackIn, bufferIn, packedLightIn, overlay, red, green, blue, alpha);
+        this.hat.render(matrixStackIn, bufferIn, packedLightIn, overlay, color);
         matrixStackIn.popPose();
     }
 

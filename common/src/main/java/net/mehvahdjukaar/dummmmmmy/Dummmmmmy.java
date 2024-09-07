@@ -4,16 +4,19 @@ import net.mehvahdjukaar.dummmmmmy.common.TargetDummyEntity;
 import net.mehvahdjukaar.dummmmmmy.common.TargetDummyItem;
 import net.mehvahdjukaar.dummmmmmy.configs.ClientConfigs;
 import net.mehvahdjukaar.dummmmmmy.configs.CommonConfigs;
-import net.mehvahdjukaar.dummmmmmy.network.NetworkHandler;
+import net.mehvahdjukaar.dummmmmmy.network.ModMessages;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
+import net.minecraft.advancements.critereon.EntityPredicate;
+import net.minecraft.advancements.critereon.EntityTypePredicate;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.BlockSource;
 import net.minecraft.core.Direction;
+import net.minecraft.core.dispenser.BlockSource;
 import net.minecraft.core.dispenser.DispenseItemBehavior;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.EntityTypeTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.entity.EntityType;
@@ -38,16 +41,21 @@ public class Dummmmmmy {
     public static final Logger LOGGER = LogManager.getLogger();
 
     public static ResourceLocation res(String name) {
-        return new ResourceLocation(MOD_ID, name);
+        return ResourceLocation.fromNamespaceAndPath(MOD_ID, name);
     }
 
     public static void init() {
         if (PlatHelper.getPhysicalSide().isClient()) {
             DummmmmmyClient.init();
             ClientConfigs.init();
+
+            EntityPredicate.Builder.entity()
+                    .entityType(EntityTypePredicate.of(EntityTypeTags.SENSITIVE_TO_IMPALING)).build();
+
         }
-        PlatHelper.addCommonSetup(Dummmmmmy::setup);
+        ModMessages.init();
         CommonConfigs.init();
+        PlatHelper.addCommonSetup(Dummmmmmy::setup);
 
         RegHelper.addAttributeRegistration(Dummmmmmy::registerEntityAttributes);
         RegHelper.addItemsToTabsRegistration(Dummmmmmy::registerItemsToTab);
@@ -60,8 +68,6 @@ public class Dummmmmmy {
 
 
     public static void setup() {
-        NetworkHandler.registerMessages();
-
         DispenserBlock.registerBehavior(DUMMY_ITEM.get(), new SpawnDummyBehavior());
     }
 
@@ -76,17 +82,18 @@ public class Dummmmmmy {
     private static class SpawnDummyBehavior implements DispenseItemBehavior {
         @Override
         public ItemStack dispense(BlockSource dispenser, ItemStack itemStack) {
-            Level world = dispenser.getLevel();
-            Direction direction = dispenser.getBlockState().getValue(DispenserBlock.FACING);
-            BlockPos pos = dispenser.getPos().relative(direction);
+            Level world = dispenser.level();
+            Direction direction = dispenser.state().getValue(DispenserBlock.FACING);
+            BlockPos pos = dispenser.pos().relative(direction);
 
             TargetDummyEntity dummy = new TargetDummyEntity(world);
-            float f = direction.toYRot();
-            dummy.moveTo(pos.getX() + 0.5D, pos.getY(), pos.getZ() + 0.5D, f, 0.0F);
+            float rot = direction.toYRot();
+            dummy.moveTo(pos.getX() + 0.5D, pos.getY(), pos.getZ() + 0.5D, rot, 0.0F);
+            dummy.setYHeadRot(rot);
 
             world.addFreshEntity(dummy);
             itemStack.shrink(1);
-            world.levelEvent(1000, dispenser.getPos(), 0);
+            world.levelEvent(1000, dispenser.pos(), 0);
             return itemStack;
         }
     }

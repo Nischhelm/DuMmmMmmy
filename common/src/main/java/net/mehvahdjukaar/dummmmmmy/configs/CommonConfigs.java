@@ -2,8 +2,8 @@ package net.mehvahdjukaar.dummmmmmy.configs;
 
 import net.mehvahdjukaar.dummmmmmy.Dummmmmmy;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigBuilder;
-import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigSpec;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigType;
+import net.mehvahdjukaar.moonlight.api.platform.configs.ModConfigHolder;
 
 import java.util.Collections;
 import java.util.List;
@@ -15,7 +15,7 @@ public class CommonConfigs {
     public static void init() {
     }
 
-    public static final ConfigSpec SPEC;
+    public static final ModConfigHolder SPEC;
 
     public static final Supplier<List<String>> WHITELIST;
     public static final Supplier<List<String>> BLACKLIST;
@@ -71,7 +71,7 @@ public class CommonConfigs {
                 .define("healing_mode", Mode.NONE);
         builder.pop();
 
-        SPEC = builder.buildAndRegister();
+        SPEC = builder.build();
     }
 
     public enum DpsMode {

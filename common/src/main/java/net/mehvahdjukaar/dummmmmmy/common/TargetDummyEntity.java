@@ -6,16 +6,16 @@ import net.mehvahdjukaar.dummmmmmy.configs.CommonConfigs;
 import net.mehvahdjukaar.dummmmmmy.network.ClientBoundDamageNumberMessage;
 import net.mehvahdjukaar.dummmmmmy.network.ClientBoundSyncEquipMessage;
 import net.mehvahdjukaar.dummmmmmy.network.ClientBoundUpdateAnimationMessage;
-import net.mehvahdjukaar.dummmmmmy.network.NetworkHandler;
+import net.mehvahdjukaar.dummmmmmy.network.ModMessages;
 import net.mehvahdjukaar.moonlight.api.platform.ForgeHelper;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
+import net.mehvahdjukaar.moonlight.api.platform.network.NetworkHelper;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -32,7 +32,6 @@ import net.minecraft.world.damagesource.CombatTracker;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
-import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.boss.wither.WitherBoss;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.*;
@@ -90,12 +89,6 @@ public class TargetDummyEntity extends Mob {
         Arrays.fill(this.armorDropChances, 1.1f);
     }
 
-    @Override
-    public void recreateFromPacket(ClientboundAddEntityPacket packet) {
-        super.recreateFromPacket(packet);
-        int aa = 1;
-    }
-
     public float getShake(float partialTicks) {
         return Mth.lerp(partialTicks, prevShakeAmount, shakeAmount);
     }
@@ -105,9 +98,9 @@ public class TargetDummyEntity extends Mob {
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(SHEARED, false);
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(SHEARED, false);
     }
 
     public boolean isSheared() {
@@ -168,7 +161,7 @@ public class TargetDummyEntity extends Mob {
 
             //special items
             if (item instanceof BannerItem ||
-                    DummyMobType.get(itemstack) != DummyMobType.UNDEFINED ||
+                    DummyMobType.get(itemstack, level()) != DummyMobType.UNDEFINED ||
                     ForgeHelper.canEquipItem(this, itemstack, EquipmentSlot.HEAD)) {
                 equipmentSlot = EquipmentSlot.HEAD;
             }
@@ -204,10 +197,9 @@ public class TargetDummyEntity extends Mob {
 
             if (inventoryChanged) {
                 this.setLastArmorItem(equipmentSlot, itemstack);
-                if (!level.isClientSide) {
-                    NetworkHandler.CHANNEL.sentToAllClientPlayersTrackingEntity(this,
-                            new ClientBoundSyncEquipMessage(this.getId(), equipmentSlot.getIndex(), this.getItemBySlot(equipmentSlot)));
-                }
+                NetworkHelper.sendToAllClientPlayersTrackingEntity(this,
+                        new ClientBoundSyncEquipMessage(this.getId(), equipmentSlot.getIndex(),
+                                this.getItemBySlot(equipmentSlot).copy()));
                 //this.applyEquipmentModifiers();
                 return InteractionResult.SUCCESS;
             }
@@ -468,7 +460,7 @@ public class TargetDummyEntity extends Mob {
         this.animationPosition = Math.min(this.animationPosition + damage, 60f);
 
         //custom update packet to send animation position
-        NetworkHandler.CHANNEL.sentToAllClientPlayersTrackingEntity(this,
+        ModMessages.CHANNEL.sentToAllClientPlayersTrackingEntity(this,
                 new ClientBoundUpdateAnimationMessage(this.getId(), this.animationPosition));
 
         if (source != null) {
@@ -483,7 +475,7 @@ public class TargetDummyEntity extends Mob {
                 }
 
                 for (var p : this.currentlyAttacking.keySet()) {
-                    NetworkHandler.CHANNEL.sendToClientPlayer(p,
+                    NetworkHelper.sendToClientPlayer(p,
                             new ClientBoundDamageNumberMessage(this.getId(), damage, source, critRec));
                 }
                 if (critRec != null) {
@@ -634,11 +626,6 @@ public class TargetDummyEntity extends Mob {
     }
 
     @Override
-    public boolean canBreatheUnderwater() {
-        return true;
-    }
-
-    @Override
     protected boolean isImmobile() {
         return true;
     }
@@ -672,7 +659,7 @@ public class TargetDummyEntity extends Mob {
     }
 
     @Override
-    protected void dropCustomDeathLoot(DamageSource source, int looting, boolean recentlyHitIn) {
+    protected void dropCustomDeathLoot(ServerLevel level, DamageSource damageSource, boolean recentlyHit) {
     }
 
     @Override
@@ -685,19 +672,13 @@ public class TargetDummyEntity extends Mob {
         return SoundEvents.ARMOR_STAND_BREAK;
     }
 
-    @Override
-    public @NotNull MobType getMobType() {
-        return this.mobType.getType();
+
+    public @NotNull DummyMobType getMobType() {
+        return this.mobType;
     }
 
     public static AttributeSupplier.Builder makeAttributes() {
-        return Mob.createMobAttributes()
-                .add(Attributes.FOLLOW_RANGE, 16.0D)
-                .add(Attributes.MOVEMENT_SPEED, 0D)
-                .add(Attributes.MAX_HEALTH, 40D)
-                .add(Attributes.ARMOR, 0D)
-                .add(Attributes.ATTACK_DAMAGE, 0D)
-                .add(Attributes.FLYING_SPEED, 0D);
+        return null;
     }
 
     public void updateAnimation(float shake) {

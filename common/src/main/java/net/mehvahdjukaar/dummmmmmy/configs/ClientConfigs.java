@@ -3,11 +3,10 @@ package net.mehvahdjukaar.dummmmmmy.configs;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import net.mehvahdjukaar.dummmmmmy.Dummmmmmy;
-import net.mehvahdjukaar.moonlight.api.client.util.ColorUtil;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigBuilder;
-import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigSpec;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigType;
+import net.mehvahdjukaar.moonlight.api.platform.configs.ModConfigHolder;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
 import net.mehvahdjukaar.moonlight.api.util.math.ColorUtils;
 import net.minecraft.core.Holder;
@@ -30,7 +29,7 @@ public class ClientConfigs {
     public static void init() {
     }
 
-    public static final ConfigSpec SPEC;
+    public static final ModConfigHolder SPEC;
 
 
     public static final Supplier<Double> ANIMATION_INTENSITY;
@@ -104,7 +103,7 @@ public class ClientConfigs {
 
         builder.pop();
 
-        SPEC = builder.buildAndRegister();
+        SPEC = builder.build();
     }
 
     // suboptimal but eh
@@ -136,8 +135,8 @@ public class ClientConfigs {
         private final ResourceLocation shearedTexture;
 
         SkinType(String name, String shearedName) {
-            texture = new ResourceLocation(Dummmmmmy.MOD_ID + ":textures/entity/" + name + ".png");
-            shearedTexture = new ResourceLocation(Dummmmmmy.MOD_ID + ":textures/entity/" + shearedName + ".png");
+            texture = Dummmmmmy.res("textures/entity/" + name + ".png");
+            shearedTexture = Dummmmmmy.res("textures/entity/" + shearedName + ".png");
         }
 
         public ResourceLocation getSkin(Boolean sheared) {
@@ -161,7 +160,7 @@ public class ClientConfigs {
 
     record IdPredicate(ResourceLocation resourceLocation) implements IdOrTagPredicate {
         public IdPredicate(String name) {
-            this(new ResourceLocation(name));
+            this(ResourceLocation.tryParse(name));
         }
 
         @Override

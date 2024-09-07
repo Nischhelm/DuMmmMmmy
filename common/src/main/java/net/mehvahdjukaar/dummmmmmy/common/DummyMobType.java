@@ -1,41 +1,38 @@
 package net.mehvahdjukaar.dummmmmmy.common;
 
-import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.world.entity.MobType;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.raid.Raid;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.CarvedPumpkinBlock;
 
 public enum DummyMobType {
-    UNDEFINED(MobType.UNDEFINED),
-    UNDEAD(MobType.UNDEAD),
-    WATER(MobType.WATER),
-    ILLAGER(MobType.ILLAGER),
-    ARTHROPOD(MobType.ARTHROPOD),
-    SCARECROW(MobType.UNDEFINED),
-    DECOY(MobType.UNDEFINED);
-    private final MobType type;
+    UNDEFINED,
+    UNDEAD,
+    WATER,
+    ILLAGER,
+    ARTHROPOD,
+    SCARECROW,
+    DECOY;
 
-    DummyMobType(MobType type) {
-        this.type = type;
+    DummyMobType() {
+
     }
 
-    public MobType getType() {
-        return type;
-    }
 
-    public static DummyMobType get(ItemStack headStack) {
+    public static DummyMobType get(ItemStack headStack, Level level) {
         if (isUndeadSkull(headStack)) return UNDEAD;
         else if (headStack.is(Items.TURTLE_HELMET)) return WATER;
         else if (headStack.is(Items.DRAGON_HEAD)) return ARTHROPOD;
         else if (headStack.is(Items.PLAYER_HEAD)) return DECOY;
-        else if (ItemStack.matches(headStack, Raid.getLeaderBannerInstance())) return ILLAGER;
+        else if (ItemStack.matches(headStack, Raid.getLeaderBannerInstance(level.registryAccess()
+                .registryOrThrow(Registries.BANNER_PATTERN).asLookup()))) return ILLAGER;
         else if (isPumpkin(headStack.getItem())) return SCARECROW;
         else return UNDEFINED;
     }

@@ -1,44 +1,41 @@
 package net.mehvahdjukaar.dummmmmmy.network;
 
+import net.mehvahdjukaar.dummmmmmy.Dummmmmmy;
 import net.mehvahdjukaar.dummmmmmy.common.TargetDummyEntity;
-import net.mehvahdjukaar.moonlight.api.platform.network.ChannelHandler;
 import net.mehvahdjukaar.moonlight.api.platform.network.Message;
 import net.minecraft.client.Minecraft;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
-import org.jetbrains.annotations.NotNull;
 
-public class ClientBoundSyncEquipMessage implements Message {
-    private final int entityID;
-    private final int slotId;
-    private final ItemStack itemstack;
+public record ClientBoundSyncEquipMessage(int entityID, int slotId, ItemStack itemStack) implements Message {
+    public static final CustomPacketPayload.TypeAndCodec<RegistryFriendlyByteBuf, ClientBoundSyncEquipMessage> TYPE =
+            Message.makeType(Dummmmmmy.res("s2c_sync_equip"), ClientBoundSyncEquipMessage::new);
 
-    public ClientBoundSyncEquipMessage(FriendlyByteBuf buf) {
-        this.entityID = buf.readInt();
-        this.slotId = buf.readInt();
-        this.itemstack = buf.readItem();
-    }
 
-    public ClientBoundSyncEquipMessage(int entityId, int slotId, @NotNull ItemStack itemstack) {
-        this.entityID = entityId;
-        this.slotId = slotId;
-        this.itemstack = itemstack.copy();
+    public ClientBoundSyncEquipMessage(RegistryFriendlyByteBuf buf) {
+        this(buf.readInt(), buf.readInt(), ItemStack.STREAM_CODEC.decode(buf));
     }
 
     @Override
-    public void writeToBuffer(FriendlyByteBuf buf) {
+    public void write(RegistryFriendlyByteBuf buf) {
         buf.writeInt(this.entityID);
         buf.writeInt(slotId);
-        buf.writeItem(itemstack);
+        ItemStack.STREAM_CODEC.encode(buf, this.itemStack);
     }
 
     @Override
-    public void handle(ChannelHandler.Context context) {
+    public void handle(Context context) {
         Entity entity = Minecraft.getInstance().level.getEntity(this.entityID);
         if (entity instanceof TargetDummyEntity dummy) {
-            dummy.setItemSlot(EquipmentSlot.byTypeAndIndex(EquipmentSlot.Type.ARMOR, this.slotId), this.itemstack);
+            dummy.setItemSlot(EquipmentSlot.byTypeAndIndex(EquipmentSlot.Type.ARMOR, this.slotId), this.itemStack);
         }
+    }
+
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE.type();
     }
 }

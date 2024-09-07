@@ -3,8 +3,9 @@ package net.mehvahdjukaar.dummmmmmy.common;
 import net.mehvahdjukaar.dummmmmmy.Dummmmmmy;
 import net.mehvahdjukaar.dummmmmmy.configs.CommonConfigs;
 import net.mehvahdjukaar.dummmmmmy.network.ClientBoundDamageNumberMessage;
-import net.mehvahdjukaar.dummmmmmy.network.NetworkHandler;
+import net.mehvahdjukaar.dummmmmmy.network.ModMessages;
 import net.mehvahdjukaar.moonlight.api.misc.EventCalled;
+import net.mehvahdjukaar.moonlight.api.platform.network.NetworkHelper;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
@@ -73,16 +74,16 @@ public class ModEvents {
             var message = new ClientBoundDamageNumberMessage(target.getId(), amount, source, null);
             switch (CommonConfigs.DAMAGE_NUMBERS_MODE.get()) {
                 case ALL_ENTITIES -> {
-                    NetworkHandler.CHANNEL.sentToAllClientPlayersTrackingEntity(target, message);
+                    NetworkHelper.sendToAllClientPlayersTrackingEntity(target, message);
                 }
                 case ALL_PLAYERS -> {
                     if (source.getEntity() instanceof ServerPlayer) {
-                        NetworkHandler.CHANNEL.sentToAllClientPlayersTrackingEntity(target, message);
+                        NetworkHelper.sendToAllClientPlayersTrackingEntity(target, message);
                     }
                 }
                 case LOCAL_PLAYER -> {
                     if (source.getEntity() instanceof ServerPlayer attackingPlayer) {
-                        NetworkHandler.CHANNEL.sendToClientPlayer(attackingPlayer, message);
+                        NetworkHelper.sendToClientPlayer(attackingPlayer, message);
                     }
                 }
                 case NONE -> {
@@ -97,16 +98,16 @@ public class ModEvents {
             var message = new ClientBoundDamageNumberMessage(entity.getId(), -amount, null, null);
             switch (CommonConfigs.HEALING_NUMBERS_MODE.get()) {
                 case ALL_ENTITIES -> {
-                    NetworkHandler.CHANNEL.sentToAllClientPlayersTrackingEntity(entity, message);
+                    NetworkHelper.sendToAllClientPlayersTrackingEntity(entity, message);
                 }
                 case ALL_PLAYERS -> {
                     if (entity instanceof ServerPlayer) {
-                        NetworkHandler.CHANNEL.sentToAllClientPlayersTrackingEntity(entity, message);
+                        NetworkHelper.sendToAllClientPlayersTrackingEntity(entity, message);
                     }
                 }
                 case LOCAL_PLAYER -> {
                     if (entity instanceof ServerPlayer player) {
-                        NetworkHandler.CHANNEL.sendToClientPlayer(player, message);
+                        NetworkHelper.sendToClientPlayer(player, message);
                     }
                 }
                 case NONE -> {

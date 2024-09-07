@@ -6,9 +6,8 @@ import net.mehvahdjukaar.dummmmmmy.common.TargetDummyEntity;
 import net.mehvahdjukaar.dummmmmmy.configs.ClientConfigs;
 import net.mehvahdjukaar.dummmmmmy.configs.CritMode;
 import net.mehvahdjukaar.moonlight.api.platform.network.Message;
-import net.mehvahdjukaar.moonlight.api.util.Utils;
 import net.minecraft.client.Minecraft;
-import net.minecraft.core.registries.Registries;
+import net.minecraft.core.Holder;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
@@ -18,7 +17,7 @@ import net.minecraft.world.entity.Entity;
 import org.jetbrains.annotations.Nullable;
 
 public record ClientBoundDamageNumberMessage
-        (int entityID, float damageAmount, ResourceLocation damageType, boolean isCrit, float critMult)
+        (int entityID, float damageAmount, Holder<DamageType> damageType, boolean isCrit, float critMult)
         implements Message {
 
     public static final CustomPacketPayload.TypeAndCodec<RegistryFriendlyByteBuf, ClientBoundDamageNumberMessage> TYPE =
@@ -28,7 +27,7 @@ public record ClientBoundDamageNumberMessage
     public static ClientBoundDamageNumberMessage of(RegistryFriendlyByteBuf buf) {
         var entityID = buf.readInt();
         var damageAmount = buf.readFloat();
-        var damageType = buf.readResourceLocation();
+        var damageType = DamageType.STREAM_CODEC.decode(buf);
         var isCrit = buf.readBoolean();
         var critMult = isCrit ? buf.readFloat() : 0;
         return new ClientBoundDamageNumberMessage(entityID, damageAmount, damageType, isCrit, critMult);
@@ -38,22 +37,19 @@ public record ClientBoundDamageNumberMessage
         this(id, damage, encodeDamage(source), critical != null, critical == null ? 0 : critical.getMultiplier());
     }
 
-    public static ResourceLocation encodeDamage(DamageSource source) {
-        if (source == null) return Dummmmmmy.TRUE_DAMAGE;
+    public static Holder<DamageType> encodeDamage(DamageSource source) {
+        if (source == null) return Dummmmmmy.TRUE_DAMAGE.getHolder();
         //if (critical) return Dummmmmmy.CRITICAL_DAMAGE;
-        DamageType damageType = source.type();
+        var damageType = source.typeHolder();
         if (damageType == null) throw new AssertionError("Damage source has null type. How?: " + source);
-        var id = Utils.hackyGetRegistry(Registries.DAMAGE_TYPE).getKey(damageType);
-        if (id == null)
-            throw new AssertionError("Damage type not found in registry. This is a bug from that mod that added it!: " + damageType);
-        return id;
+        return damageType;
     }
 
     @Override
     public void write(RegistryFriendlyByteBuf buf) {
         buf.writeInt(this.entityID);
         buf.writeFloat(this.damageAmount);
-        buf.writeResourceLocation(this.damageType);
+        DamageType.STREAM_CODEC.encode(buf, damageType));
         buf.writeBoolean(this.isCrit);
         if (isCrit) buf.writeFloat(this.critMult);
     }

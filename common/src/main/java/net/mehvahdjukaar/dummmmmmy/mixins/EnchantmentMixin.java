@@ -23,9 +23,10 @@ public abstract class EnchantmentMixin {
                 || EnchantHackHelper.matches(context, (Enchantment) (Object) this);
     }
 
+    /*
     @ModifyExpressionValue(method = "applyEffects",
             at = @At(value = "INVOKE", target = "Lnet/minecraft/world/item/enchantment/ConditionalEffect;matches(Lnet/minecraft/world/level/storage/loot/LootContext;)Z"))
     private static boolean dummy$entityAwareMatch2(boolean original, @Local(argsOnly = true) LootContext context) {
         return original || EnchantHackHelper.matches(context, (Enchantment) (Object) this);
-    }
+    }*/
 }

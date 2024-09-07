@@ -113,7 +113,7 @@ public class ClientConfigs {
         var opt = Utils.hackyGetRegistry(Registries.DAMAGE_TYPE)
                 .getHolder(ResourceKey.create(Registries.DAMAGE_TYPE, damageTypeId));
         if (opt.isEmpty()) {
-            Dummmmmmy.LOGGER.error("Received invalid damage type: " + damageTypeId);
+            Dummmmmmy.LOGGER.error("Received invalid damage type: {}", damageTypeId);
         } else {
             var holder = opt.get();
             for (var e : values.entrySet()) {

@@ -30,7 +30,7 @@ public record ClientBoundSyncEquipMessage(int entityID, int slotId, ItemStack it
     public void handle(Context context) {
         Entity entity = Minecraft.getInstance().level.getEntity(this.entityID);
         if (entity instanceof TargetDummyEntity dummy) {
-            dummy.setItemSlot(EquipmentSlot.byTypeAndIndex(EquipmentSlot.Type.ARMOR, this.slotId), this.itemStack);
+            dummy.setItemSlot(EquipmentSlot.byTypeAndIndex(EquipmentSlot.Type.HUMANOID_ARMOR, this.slotId), this.itemStack);
         }
     }
 

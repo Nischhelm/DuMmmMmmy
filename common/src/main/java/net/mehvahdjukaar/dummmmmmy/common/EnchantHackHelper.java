@@ -1,6 +1,8 @@
 package net.mehvahdjukaar.dummmmmmy.common;
 
+import net.mehvahdjukaar.dummmmmmy.mixins.LivingEntityMixin;
 import net.mehvahdjukaar.moonlight.api.misc.DataObjectReference;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.storage.loot.LootContext;
@@ -25,6 +27,13 @@ public class EnchantHackHelper {
                     return true; //TODO:
                 }
             }
+        }
+        return false;
+    }
+
+    public static boolean freezeHurtsExtra(Entity entity) {
+        if(entity instanceof TargetDummyEntity e){
+
         }
         return false;
     }

@@ -2,7 +2,6 @@ package net.mehvahdjukaar.dummmmmmy.common;
 
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.raid.Raid;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
@@ -18,6 +17,7 @@ public enum DummyMobType {
     WATER,
     ILLAGER,
     ARTHROPOD,
+    FIRE,
     SCARECROW,
     DECOY;
 
@@ -31,6 +31,7 @@ public enum DummyMobType {
         else if (headStack.is(Items.TURTLE_HELMET)) return WATER;
         else if (headStack.is(Items.DRAGON_HEAD)) return ARTHROPOD;
         else if (headStack.is(Items.PLAYER_HEAD)) return DECOY;
+        else if (headStack.is(Items.PIGLIN_HEAD)) return FIRE;
         else if (ItemStack.matches(headStack, Raid.getLeaderBannerInstance(level.registryAccess()
                 .registryOrThrow(Registries.BANNER_PATTERN).asLookup()))) return ILLAGER;
         else if (isPumpkin(headStack.getItem())) return SCARECROW;
@@ -54,4 +55,11 @@ public enum DummyMobType {
     }
 
 
+    public boolean isInvertedHealAndHarm() {
+        return false;
+    }
+
+    public boolean ignoresPoisonAndRegen() {
+        return false;
+    }
 }

@@ -5,6 +5,7 @@ import net.mehvahdjukaar.dummmmmmy.common.TargetDummyItem;
 import net.mehvahdjukaar.dummmmmmy.configs.ClientConfigs;
 import net.mehvahdjukaar.dummmmmmy.configs.CommonConfigs;
 import net.mehvahdjukaar.dummmmmmy.network.ModMessages;
+import net.mehvahdjukaar.moonlight.api.misc.DataObjectReference;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
 import net.minecraft.advancements.critereon.EntityPredicate;
@@ -121,7 +122,9 @@ public class Dummmmmmy {
     public static final TagKey<DamageType> IS_COLD = TagKey.create(Registries.DAMAGE_TYPE, res("is_cold"));
 
 
-    public static final ResourceLocation TRUE_DAMAGE = Dummmmmmy.res("true");
-    public static final ResourceLocation CRITICAL_DAMAGE = Dummmmmmy.res("critical");
+    public static final DataObjectReference<DamageType> TRUE_DAMAGE =
+            new DataObjectReference<>( res("true"),Registries.DAMAGE_TYPE);
+    public static final DataObjectReference<DamageType> CRITICAL_DAMAGE =
+            new DataObjectReference<>( res("critical"),Registries.DAMAGE_TYPE);
 
 }

@@ -7,6 +7,7 @@ import net.mehvahdjukaar.dummmmmmy.DummmmmmyClient;
 import net.mehvahdjukaar.dummmmmmy.common.ModEvents;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigBuilder;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
@@ -42,7 +43,7 @@ public class DummmmmmyForge {
     //prevents them from spawning
     @SubscribeEvent
     public void onCheckSpawn(MobSpawnEvent.FinalizeSpawn event) {
-       if(ModEvents.onCheckSpawn(event.getEntity(), event.getLevel())){
+       if(event.getSpawnType() == MobSpawnType.NATURAL && ModEvents.onCheckSpawn(event.getEntity(), event.getLevel())){
            event.setSpawnCancelled(true);
        }
     }

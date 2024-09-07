@@ -14,6 +14,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import org.jetbrains.annotations.Nullable;
@@ -40,10 +41,10 @@ public class ClientBoundDamageNumberMessage implements Message {
     public static ResourceLocation encodeDamage(DamageSource source) {
         if (source == null) return Dummmmmmy.TRUE_DAMAGE;
         //if (critical) return Dummmmmmy.CRITICAL_DAMAGE;
-        var damageType = source.type();
+        DamageType damageType = source.type();
         if(damageType == null) throw new AssertionError("Damage source has null type. How?: " + source);
         var id = Utils.hackyGetRegistry(Registries.DAMAGE_TYPE).getKey(damageType);
-        if (id == null) throw new AssertionError("Damage type not found in registry. This is a but from that mod that added it!: " + damageType);
+        if (id == null) throw new AssertionError("Damage type not found in registry. This is a bug from that mod that added it!: " + damageType);
         return id;
     }
 

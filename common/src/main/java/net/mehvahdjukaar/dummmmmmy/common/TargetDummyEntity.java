@@ -1,7 +1,6 @@
 
 package net.mehvahdjukaar.dummmmmmy.common;
 
-import com.google.common.math.DoubleMath;
 import net.mehvahdjukaar.dummmmmmy.Dummmmmmy;
 import net.mehvahdjukaar.dummmmmmy.configs.CommonConfigs;
 import net.mehvahdjukaar.dummmmmmy.network.ClientBoundDamageNumberMessage;
@@ -16,8 +15,6 @@ import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -91,6 +88,12 @@ public class TargetDummyEntity extends Mob {
         this(Dummmmmmy.TARGET_DUMMY.get(), world);
         this.xpReward = 0;
         Arrays.fill(this.armorDropChances, 1.1f);
+    }
+
+    @Override
+    public void recreateFromPacket(ClientboundAddEntityPacket packet) {
+        super.recreateFromPacket(packet);
+        int aa = 1;
     }
 
     public float getShake(float partialTicks) {
@@ -372,7 +375,7 @@ public class TargetDummyEntity extends Mob {
                 currentlyAttacking.put(sp, CommonConfigs.MAX_COMBAT_INTERVAL.get());
             }
             // shift-left-click with empty hand dismantles
-            if (player.isShiftKeyDown() && player.getMainHandItem().isEmpty() && !this.unbreakable) {
+            if (player.isShiftKeyDown() && player.getMainHandItem().isEmpty() && !this.unbreakable && player.getAbilities().mayBuild) {
                 dismantle(!player.isCreative());
                 return false;
             }
@@ -415,8 +418,8 @@ public class TargetDummyEntity extends Mob {
                     CombatEntry currentCombatEntry = getLastEntry();
                     //Is same damage as current one. Sanity-check, I guess
                     if (currentCombatEntry != null && getCombatTracker().lastDamageTime == this.tickCount
-                            //idk why but some rounding errors could occur. we still want to sanity check this i think? or not
-                            //&& DoubleMath.fuzzyEquals(damage, currentCombatEntry.damage(), 0.0001)
+                        //idk why but some rounding errors could occur. we still want to sanity check this i think? or not
+                        //&& DoubleMath.fuzzyEquals(damage, currentCombatEntry.damage(), 0.0001)
                     ) {
                         actualSource = currentCombatEntry.source();
                         if (Math.abs(damage - currentCombatEntry.damage()) > 0.0001) {
@@ -435,6 +438,7 @@ public class TargetDummyEntity extends Mob {
     }
 
     private void onActuallyDamagedOrTrueDamageDetected(float damage, @Nullable DamageSource actualSource) {
+        if (damage <= 0) return;
         showDamageAndAnimationsToClients(damage, actualSource);
         updateTargetBlock(damage);
         if (level() instanceof ServerLevel sl) {

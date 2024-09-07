@@ -15,7 +15,7 @@ public abstract class ToolItemMixin {
 
     @Inject(method = "hurtEnemy", at = @At("HEAD"),
             cancellable = true)
-    public void hurtItem(ItemStack stack, LivingEntity entity, LivingEntity player, CallbackInfoReturnable<Boolean> cir) {
+    public void mm$damageEquipment(ItemStack stack, LivingEntity entity, LivingEntity player, CallbackInfoReturnable<Boolean> cir) {
         if (entity.getType() == Dummmmmmy.TARGET_DUMMY.get() && CommonConfigs.DAMAGE_EQUIPMENT.get()) {
             cir.setReturnValue(true);
             cir.cancel();

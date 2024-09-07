@@ -96,8 +96,8 @@ public class Dummmmmmy {
     public static final Supplier<EntityType<TargetDummyEntity>> TARGET_DUMMY = RegHelper.registerEntityType(
             res(TARGET_DUMMY_NAME), () -> (
                     EntityType.Builder.<TargetDummyEntity>of(TargetDummyEntity::new, MobCategory.MISC)
-                            //.setTrackingRange(64)
-                            //.setUpdateInterval(3)
+                            .clientTrackingRange(10)
+                            .updateInterval(40)
                             .sized(0.6f, 2f))
                     .build(TARGET_DUMMY_NAME));
 

@@ -1,1 +1,2 @@
-fixed an issue with spawn packet on fabric
+- fixed dummy head rotation not being set correctly when first placed
+- fixed same issues for armor stands

@@ -30,9 +30,7 @@ public class TargetDummyItem extends Item {
     @Override
     public InteractionResult useOn(UseOnContext context) {
         Direction direction = context.getClickedFace();
-        if (direction == Direction.DOWN) {
-            return InteractionResult.FAIL;
-        } else {
+        if (direction != Direction.DOWN) {
             Level level = context.getLevel();
             BlockPlaceContext placeContext = new BlockPlaceContext(context);
             BlockPos blockpos = placeContext.getClickedPos();
@@ -47,14 +45,16 @@ public class TargetDummyItem extends Item {
                         level.removeBlock(blockpos, false);
                         level.removeBlock(above, false);
                         Consumer<TargetDummyEntity> consumer = EntityType.createDefaultStackConfig(serverLevel, itemstack, context.getPlayer());
-                        TargetDummyEntity dummy = type.create(serverLevel, itemstack.getTag(), consumer, blockpos, MobSpawnType.SPAWN_EGG, false, false);
-                        if (dummy == null) {
-                            return InteractionResult.FAIL;
-                        }
+                        TargetDummyEntity dummy = new TargetDummyEntity(serverLevel);
+
                         float rotation = Mth.floor((Mth.wrapDegrees(context.getRotation() - 180.0F) + 11.25) / 22.5F) * 22.5F;
                         dummy.moveTo(vec3.x, vec3.y, vec3.z, rotation, 0.0F);
+                        dummy.setYHeadRot(rotation);
+
+                        consumer.accept(dummy);
 
                         level.addFreshEntity(dummy);
+
                         level.playSound(null, dummy.getX(), dummy.getY(), dummy.getZ(), SoundEvents.BAMBOO_PLACE,
                                 SoundSource.BLOCKS, 0.75F, 0.8F);
                         dummy.gameEvent(GameEvent.ENTITY_PLACE, context.getPlayer());
@@ -63,9 +63,9 @@ public class TargetDummyItem extends Item {
                     return InteractionResult.SUCCESS;
                 }
             }
-            return InteractionResult.FAIL;
 
         }
+        return InteractionResult.FAIL;
     }
 }
 

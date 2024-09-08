@@ -100,18 +100,23 @@ public class TargetDummyEntity extends Mob {
         return Mth.lerp(partialTicks, prevAnimationPosition, animationPosition);
     }
 
-    @Override
-    protected void defineSynchedData(SynchedEntityData.Builder builder) {
-        super.defineSynchedData(builder);
-        builder.define(SHEARED, false);
-    }
-
     public boolean isSheared() {
         return this.entityData.get(SHEARED);
     }
 
     public void setSheared(boolean sheared) {
         this.entityData.set(SHEARED, sheared);
+    }
+
+    @Override
+    public void setBodyArmorItem(ItemStack stack) {
+        super.setBodyArmorItem(stack);
+    }
+
+    @Override
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(SHEARED, false);
     }
 
     @Override

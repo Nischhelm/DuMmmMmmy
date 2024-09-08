@@ -1,23 +1,28 @@
 package net.mehvahdjukaar.dummmmmmy.common;
 
+import net.mehvahdjukaar.moonlight.api.util.Utils;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.raid.Raid;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.CarvedPumpkinBlock;
 
+// mimics old behavior now driven by tags in a dynamic manner
 public enum DummyMobType {
     UNDEFINED,
     UNDEAD,
     WATER,
     ILLAGER,
     ARTHROPOD,
-    FIRE,
+    NETHER_MOB,
     SCARECROW,
     DECOY;
 
@@ -31,7 +36,7 @@ public enum DummyMobType {
         else if (headStack.is(Items.TURTLE_HELMET)) return WATER;
         else if (headStack.is(Items.DRAGON_HEAD)) return ARTHROPOD;
         else if (headStack.is(Items.PLAYER_HEAD)) return DECOY;
-        else if (headStack.is(Items.PIGLIN_HEAD)) return FIRE;
+        else if (headStack.is(Items.PIGLIN_HEAD)) return NETHER_MOB;
         else if (ItemStack.matches(headStack, Raid.getLeaderBannerInstance(level.registryAccess()
                 .registryOrThrow(Registries.BANNER_PATTERN).asLookup()))) return ILLAGER;
         else if (isPumpkin(headStack.getItem())) return SCARECROW;
@@ -56,10 +61,29 @@ public enum DummyMobType {
 
 
     public boolean isInvertedHealAndHarm() {
-        return false;
+        return this == UNDEAD;
     }
 
     public boolean ignoresPoisonAndRegen() {
+        return this == UNDEAD;
+    }
+
+    // mimics tag behavior
+    public boolean isVulnerableTo(Enchantment enchantment) {
+        ResourceKey<?> id = Utils.hackyGetRegistry(Registries.ENCHANTMENT).getResourceKey(enchantment).get();
+        if (id == Enchantments.SMITE) {
+            return this == UNDEAD;
+        }
+        if (id == Enchantments.BANE_OF_ARTHROPODS) {
+            return this == ARTHROPOD;
+        }
+        if (id == Enchantments.IMPALING) {
+            return this == WATER;
+        }
         return false;
+    }
+
+    public boolean freezeHurtsExtra() {
+        return this == NETHER_MOB;
     }
 }

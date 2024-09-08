@@ -3,8 +3,8 @@ package net.mehvahdjukaar.dummmmmmy.mixins;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
-import net.mehvahdjukaar.dummmmmmy.common.EnchantHackHelper;
 import net.mehvahdjukaar.dummmmmmy.common.ModEvents;
+import net.mehvahdjukaar.dummmmmmy.common.TargetDummyEntity;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -49,6 +49,6 @@ public abstract class LivingEntityMixin extends Entity {
             ordinal = 0,
             target = "Lnet/minecraft/world/entity/EntityType;is(Lnet/minecraft/tags/TagKey;)Z"))
     private boolean dummy$hurtDummyFromFreeze(boolean original) {
-        return original || EnchantHackHelper.freezeHurtsExtra(this);
+        return original || ((Object)this instanceof TargetDummyEntity te && te.getMobType().freezeHurtsExtra());
     }
 }

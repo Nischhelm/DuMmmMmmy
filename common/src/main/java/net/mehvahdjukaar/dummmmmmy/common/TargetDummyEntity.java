@@ -4,14 +4,13 @@ package net.mehvahdjukaar.dummmmmmy.common;
 import net.mehvahdjukaar.dummmmmmy.Dummmmmmy;
 import net.mehvahdjukaar.dummmmmmy.configs.CommonConfigs;
 import net.mehvahdjukaar.dummmmmmy.network.ClientBoundDamageNumberMessage;
-import net.mehvahdjukaar.dummmmmmy.network.ClientBoundSyncEquipMessage;
 import net.mehvahdjukaar.dummmmmmy.network.ClientBoundUpdateAnimationMessage;
-import net.mehvahdjukaar.dummmmmmy.network.ModMessages;
 import net.mehvahdjukaar.moonlight.api.platform.ForgeHelper;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.platform.network.NetworkHelper;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.NonNullList;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
@@ -24,17 +23,24 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.tags.EntityTypeTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.CombatEntry;
 import net.minecraft.world.damagesource.CombatTracker;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.boss.wither.WitherBoss;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.*;
+import net.minecraft.world.item.BannerItem;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ShearsItem;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.TargetBlock;
@@ -59,9 +65,6 @@ public class TargetDummyEntity extends Mob {
     //has just been hit by critical? server side
     private final List<CritRecord> critRecordsThisTick = new ArrayList<>();
     private DummyMobType mobType = DummyMobType.UNDEFINED;
-
-    //needed because it's private, and we aren't calling le tick
-    private final NonNullList<ItemStack> lastArmorItems = NonNullList.withSize(4, ItemStack.EMPTY);
 
     private final Map<ServerPlayer, Integer> currentlyAttacking = new HashMap<>();
     private DamageSource currentDamageSource = null;
@@ -119,40 +122,23 @@ public class TargetDummyEntity extends Mob {
     @Override
     public void addAdditionalSaveData(CompoundTag tag) {
         super.addAdditionalSaveData(tag);
-        tag.putInt("Type", this.mobType.ordinal());
         tag.putBoolean("Sheared", this.isSheared());
         if (this.unbreakable) tag.putBoolean("Unbreakable", true);
-        this.applyEquipmentModifiers();
     }
 
     @Override
     public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
-        this.mobType = DummyMobType.values()[tag.getInt("Type")];
         this.setSheared(tag.getBoolean("Sheared"));
-        if (tag.contains("unbreakable")) {
-            this.unbreakable = tag.getBoolean("unbreakable");
+        if (tag.contains("Unbreakable")) {
+            this.unbreakable = tag.getBoolean("Unbreakable");
         }
-    }
-
-    @Override
-    public void setYBodyRot(float pOffset) {
-        float r = this.getYRot();
-        this.yRotO = r;
-        this.yBodyRotO = this.yBodyRot = r;
-    }
-
-    @Override
-    public void setYHeadRot(float pRotation) {
-        float r = this.getYRot();
-        this.yRotO = r;
-        this.yHeadRotO = this.yHeadRot = r;
     }
 
     // dress it up! :D
     @Override
     public InteractionResult interactAt(Player player, Vec3 vec, InteractionHand hand) {
-        boolean inventoryChanged = false;
+        boolean success = false;
         if (!player.isSpectator() && player.getAbilities().mayBuild) {
             ItemStack itemstack = player.getItemInHand(hand);
             EquipmentSlot equipmentSlot = getEquipmentSlotForItem(itemstack);
@@ -172,16 +158,16 @@ public class TargetDummyEntity extends Mob {
                 equipmentSlot = this.getClickedSlot(vec);
                 if (this.hasItemInSlot(equipmentSlot)) {
                     if (level.isClientSide) return InteractionResult.CONSUME;
-                    this.unEquipArmor(player, equipmentSlot, hand);
-                    inventoryChanged = true;
+                    this.swapArmorItem(player, equipmentSlot, ItemStack.EMPTY, hand);
+                    success = true;
 
                 }
             }
             // armor item in hand -> equip/swap
-            else if (equipmentSlot.getType() == EquipmentSlot.Type.ARMOR) {
+            else if (equipmentSlot.getType() == EquipmentSlot.Type.HUMANOID_ARMOR) {
                 if (level.isClientSide) return InteractionResult.CONSUME;
-                this.equipArmor(player, equipmentSlot, itemstack, hand);
-                inventoryChanged = true;
+                this.swapArmorItem(player, equipmentSlot, itemstack, hand);
+                success = true;
 
             }
             //remove sack
@@ -194,51 +180,22 @@ public class TargetDummyEntity extends Mob {
                 }
             }
 
+            if (success) return InteractionResult.SUCCESS;
 
-            if (inventoryChanged) {
-                this.setLastArmorItem(equipmentSlot, itemstack);
-                NetworkHelper.sendToAllClientPlayersTrackingEntity(this,
-                        new ClientBoundSyncEquipMessage(this.getId(), equipmentSlot.getIndex(),
-                                this.getItemBySlot(equipmentSlot).copy()));
-                //this.applyEquipmentModifiers();
-                return InteractionResult.SUCCESS;
-            }
         }
         return InteractionResult.PASS;
     }
 
-    private void unEquipArmor(Player player, EquipmentSlot slot, InteractionHand hand) {
-        // set slot to stack which is empty stack
-        ItemStack itemstack = this.getItemBySlot(slot);
-        ItemStack itemstack2 = itemstack.copy();
+    private void swapArmorItem(Player player, EquipmentSlot slot, ItemStack armor, InteractionHand hand) {
+        ItemStack oldArmor = this.getItemBySlot(slot);
+        player.setItemInHand(hand, oldArmor.copy());
+        this.setItemSlot(slot, armor);
 
-        player.setItemInHand(hand, itemstack2);
-        //clear armor
-        this.setItemSlot(slot, ItemStack.EMPTY);
-
-        //this.applyEquipmentModifiers();
-        //now done here^
-        this.getAttributes().removeAttributeModifiers(itemstack2.getAttributeModifiers(slot));
         //clear mob type
-        if (slot == EquipmentSlot.HEAD) this.mobType = DummyMobType.UNDEFINED;
-
-    }
-
-    private void equipArmor(Player player, EquipmentSlot slot, ItemStack stack, InteractionHand hand) {
-        ItemStack currentItem = this.getItemBySlot(slot);
-        ItemStack newItem = stack.copy();
-        newItem.setCount(1);
-
-        player.setItemInHand(hand, ItemUtils.createFilledResult(stack.copy(), player, currentItem, player.isCreative()));
-
-        this.setItemSlot(slot, newItem);
-
-        //this.applyEquipmentModifiers();
-        //now done here^
-        this.getAttributes().addTransientAttributeModifiers(newItem.getAttributeModifiers(slot));
         if (slot == EquipmentSlot.HEAD) {
-            this.mobType = DummyMobType.get(newItem);
+            this.mobType = DummyMobType.UNDEFINED;
         }
+
     }
 
     public boolean canScare() {
@@ -265,42 +222,10 @@ public class TargetDummyEntity extends Mob {
         return equipmentSlot;
     }
 
-    private void setLastArmorItem(EquipmentSlot type, ItemStack stack) {
-        this.lastArmorItems.set(type.getIndex(), stack);
-    }
-
-    public void applyEquipmentModifiers() {
-        //living entity code here. apparently every entity does this check every tick.
-        //trying instead to run it only when needed instead
-        if (!this.level().isClientSide) {
-            for (EquipmentSlot equipmentSlot : EquipmentSlot.values()) {
-                ItemStack itemstack;
-                if (equipmentSlot.getType() == EquipmentSlot.Type.ARMOR) {
-                    itemstack = this.lastArmorItems.get(equipmentSlot.getIndex());
-
-                    ItemStack slot = this.getItemBySlot(equipmentSlot);
-                    if (!ItemStack.matches(slot, itemstack)) {
-                        if (!slot.equals(itemstack))
-                            //packets are already handled by livingEntity detectEquipmentChange
-                            //send packet
-                            //Network.sendToAllTracking(this.world,this, new Network.PacketSyncEquip(this.getEntityId(), equipmentslottype.getIndex(), itemstack));
-                            ForgeHelper.onEquipmentChange(this, equipmentSlot, itemstack, slot);
-                        if (!itemstack.isEmpty()) {
-                            this.getAttributes().removeAttributeModifiers(itemstack.getAttributeModifiers(equipmentSlot));
-                        }
-                        if (!slot.isEmpty()) {
-                            this.getAttributes().addTransientAttributeModifiers(slot.getAttributeModifiers(equipmentSlot));
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     @Override
     public void dropEquipment() {
         for (EquipmentSlot slot : EquipmentSlot.values()) {
-            if (slot.getType() != EquipmentSlot.Type.ARMOR) {
+            if (slot.getType() != EquipmentSlot.Type.HUMANOID_ARMOR) {
                 continue;
             }
             ItemStack armor = getItemBySlot(slot);
@@ -333,7 +258,8 @@ public class TargetDummyEntity extends Mob {
     public ItemStack getPickResult() {
         ItemStack itemStack = new ItemStack(Dummmmmmy.DUMMY_ITEM.get());
         if (this.hasCustomName()) {
-            itemStack.setHoverName(this.getCustomName());
+            //TODO: check if its needed
+            itemStack.set(DataComponents.CUSTOM_NAME, this.getCustomName());
         }
         return itemStack;
     }
@@ -460,7 +386,7 @@ public class TargetDummyEntity extends Mob {
         this.animationPosition = Math.min(this.animationPosition + damage, 60f);
 
         //custom update packet to send animation position
-        ModMessages.CHANNEL.sentToAllClientPlayersTrackingEntity(this,
+        NetworkHelper.sendToAllClientPlayersTrackingEntity(this,
                 new ClientBoundUpdateAnimationMessage(this.getId(), this.animationPosition));
 
         if (source != null) {
@@ -672,13 +598,36 @@ public class TargetDummyEntity extends Mob {
         return SoundEvents.ARMOR_STAND_BREAK;
     }
 
+    // these 2 mimic what tags do but depending on entity state
+    @Override
+    public boolean isInvertedHealAndHarm() {
+        return this.getType().is(EntityTypeTags.INVERTED_HEALING_AND_HARM) ||
+                this.mobType.isInvertedHealAndHarm();
+    }
+
+    // mimic tag behavior
+    @Override
+    public boolean canBeAffected(MobEffectInstance effectInstance) {
+        if ((effectInstance.is(MobEffects.REGENERATION) || effectInstance.is(MobEffects.POISON))
+                && this.mobType.ignoresPoisonAndRegen()) {
+            return false;
+        }
+        return super.canBeAffected(effectInstance);
+    }
+
 
     public @NotNull DummyMobType getMobType() {
         return this.mobType;
     }
 
     public static AttributeSupplier.Builder makeAttributes() {
-        return null;
+        return Mob.createMobAttributes()
+                .add(Attributes.FOLLOW_RANGE, 16.0D)
+                .add(Attributes.MOVEMENT_SPEED, 0D)
+                .add(Attributes.MAX_HEALTH, 40D)
+                .add(Attributes.ARMOR, 0D)
+                .add(Attributes.ATTACK_DAMAGE, 0D)
+                .add(Attributes.FLYING_SPEED, 0D);
     }
 
     public void updateAnimation(float shake) {

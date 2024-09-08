@@ -2,7 +2,9 @@ package net.mehvahdjukaar.dummmmmmy.neoforge;
 
 import net.mehvahdjukaar.dummmmmmy.Dummmmmmy;
 import net.mehvahdjukaar.dummmmmmy.common.ModEvents;
+import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
 import net.minecraft.world.entity.MobSpawnType;
+import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.common.NeoForge;
@@ -16,7 +18,8 @@ import net.neoforged.neoforge.event.entity.player.CriticalHitEvent;
 @Mod(Dummmmmmy.MOD_ID)
 public class DummmmmmyForge {
 
-    public DummmmmmyForge() {
+    public DummmmmmyForge(IEventBus bus) {
+        RegHelper.startRegisteringFor(bus);
         Dummmmmmy.init();
         NeoForge.EVENT_BUS.register(this);
     }

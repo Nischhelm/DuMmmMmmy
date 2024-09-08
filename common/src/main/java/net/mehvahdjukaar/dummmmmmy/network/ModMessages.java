@@ -12,6 +12,5 @@ public class ModMessages {
     private static void registerMessages(NetworkHelper.RegisterMessagesEvent event) {
         event.registerClientBound(ClientBoundDamageNumberMessage.TYPE);
         event.registerClientBound(ClientBoundUpdateAnimationMessage.TYPE);
-        event.registerClientBound(ClientBoundSyncEquipMessage.TYPE);
     }
 }

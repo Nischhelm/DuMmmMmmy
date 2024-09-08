@@ -10,8 +10,8 @@ import net.minecraft.world.entity.Entity;
 
 public record ClientBoundUpdateAnimationMessage(int entityID, float shake) implements Message {
 
-    public static final CustomPacketPayload.TypeAndCodec<RegistryFriendlyByteBuf, ClientBoundSyncEquipMessage> TYPE =
-            Message.makeType(Dummmmmmy.res("s2c_animation"), ClientBoundSyncEquipMessage::new);
+    public static final CustomPacketPayload.TypeAndCodec<RegistryFriendlyByteBuf, ClientBoundUpdateAnimationMessage> TYPE =
+            Message.makeType(Dummmmmmy.res("s2c_animation"), ClientBoundUpdateAnimationMessage::new);
 
     public ClientBoundUpdateAnimationMessage(RegistryFriendlyByteBuf buf) {
         this(buf.readInt(), buf.readFloat());

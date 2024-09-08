@@ -3,6 +3,7 @@ package net.mehvahdjukaar.dummmmmmy.client;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.math.Axis;
 import net.mehvahdjukaar.dummmmmmy.configs.ClientConfigs;
 import net.mehvahdjukaar.dummmmmmy.configs.CritMode;
 import net.minecraft.client.Camera;
@@ -14,11 +15,15 @@ import net.minecraft.client.particle.ParticleProvider;
 import net.minecraft.client.particle.ParticleRenderType;
 import net.minecraft.client.particle.SpriteSet;
 import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FastColor;
 import net.minecraft.util.Mth;
+import net.minecraft.world.item.ItemDisplayContext;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Quaternionf;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -51,7 +56,7 @@ public class DamageNumberParticle extends Particle {
         super(clientLevel, x, y, z);
         this.lifetime = 35;
         //this.setColor(FastColor.ARGB32.red(color), FastColor.ARGB32.green(color), FastColor.ARGB32.blue(color));
-        this.color = amount < 0 ? 0xff00ff00 : (int) dColor;
+        this.color = -1;// amount < 0 ? 0xff00ff00 : (int) dColor;
         this.darkColor = FastColor.ARGB32.color(255, (int) (this.rCol * 0.25f), (int) (this.rCol * 0.25f), (int) (this.rCol * 0.25));
 
         double number = Math.abs(ClientConfigs.SHOW_HEARTHS.get() ? amount / 2f : amount);
@@ -103,7 +108,7 @@ public class DamageNumberParticle extends Particle {
         // animation
         poseStack.translate((1 + inc) * Mth.lerp(partialTicks, this.prevVisualDX, this.visualDX), 0, 0);
         // scale depending on distance so size remains the same
-        poseStack.scale(-scale, -scale, scale);
+        poseStack.scale(scale, -scale, -scale);
         poseStack.translate(0, (4d * (1 - fadeout)), 0);
         poseStack.scale(fadeout, fadeout, fadeout);
         poseStack.translate(0, -distanceFromCam / 10d, 0);
@@ -112,6 +117,7 @@ public class DamageNumberParticle extends Particle {
 
         RenderSystem.enableDepthTest();
         RenderSystem.enableBlend();
+        // no idea what this did
         RenderSystem.blendFuncSeparate(770, 771, 1, 0);
 
         float x1 = 0.5f - fontRenderer.width(text) / 2f;

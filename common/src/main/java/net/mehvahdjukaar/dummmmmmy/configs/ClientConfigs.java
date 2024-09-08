@@ -7,11 +7,9 @@ import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigBuilder;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigType;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ModConfigHolder;
-import net.mehvahdjukaar.moonlight.api.util.Utils;
 import net.mehvahdjukaar.moonlight.api.util.math.ColorUtils;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.tags.TagKey;
@@ -80,8 +78,8 @@ public class ClientConfigs {
 
 
         Map<IdOrTagPredicate, Integer> map = new HashMap<>();
-        map.put(new IdPredicate(TRUE_DAMAGE), COLOR_TRUE);
-        map.put(new IdPredicate(CRITICAL_DAMAGE), COLOR_CRIT);
+        map.put(new IdPredicate(TRUE_DAMAGE.getID()), COLOR_TRUE);
+        map.put(new IdPredicate(CRITICAL_DAMAGE.getID()), COLOR_CRIT);
         map.put(new IdPredicate("generic"), COLOR_GENERIC);
         map.put(new IdPredicate("trident"), COLOR_TRIDENT);
         map.put(new IdPredicate("dragon_breath"), COLOR_DRAGON);
@@ -107,19 +105,12 @@ public class ClientConfigs {
     }
 
     // suboptimal but eh
-    public static int getDamageColor(ResourceLocation damageTypeId) {
+    public static int getDamageColor(Holder<DamageType> damageTypeId) {
         var values = ClientConfigs.DAMAGE_TO_COLORS.get();
 
-        var opt = Utils.hackyGetRegistry(Registries.DAMAGE_TYPE)
-                .getHolder(ResourceKey.create(Registries.DAMAGE_TYPE, damageTypeId));
-        if (opt.isEmpty()) {
-            Dummmmmmy.LOGGER.error("Received invalid damage type: {}", damageTypeId);
-        } else {
-            var holder = opt.get();
-            for (var e : values.entrySet()) {
-                if (e.getKey().test(holder)) {
-                    return e.getValue();
-                }
+        for (var e : values.entrySet()) {
+            if (e.getKey().test(damageTypeId)) {
+                return e.getValue();
             }
         }
         return -1;

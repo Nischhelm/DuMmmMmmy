@@ -1,5 +1,6 @@
 package net.mehvahdjukaar.dummmmmmy.network;
 
+import com.google.common.base.Preconditions;
 import net.mehvahdjukaar.dummmmmmy.Dummmmmmy;
 import net.mehvahdjukaar.dummmmmmy.common.CritRecord;
 import net.mehvahdjukaar.dummmmmmy.common.TargetDummyEntity;
@@ -41,15 +42,14 @@ public record ClientBoundDamageNumberMessage
         if (source == null) return Dummmmmmy.TRUE_DAMAGE.getHolder();
         //if (critical) return Dummmmmmy.CRITICAL_DAMAGE;
         var damageType = source.typeHolder();
-        if (damageType == null) throw new AssertionError("Damage source has null type. How?: " + source);
-        return damageType;
+        return Preconditions.checkNotNull(damageType);
     }
 
     @Override
     public void write(RegistryFriendlyByteBuf buf) {
         buf.writeInt(this.entityID);
         buf.writeFloat(this.damageAmount);
-        DamageType.STREAM_CODEC.encode(buf, damageType));
+        DamageType.STREAM_CODEC.encode(buf, damageType);
         buf.writeBoolean(this.isCrit);
         if (isCrit) buf.writeFloat(this.critMult);
     }
@@ -68,11 +68,11 @@ public record ClientBoundDamageNumberMessage
     }
 
     private void spawnParticle(Entity entity, int animationPos) {
-        ResourceLocation type = damageType;
+        var type = damageType;
         float mult = 0;
         CritMode critMode = ClientConfigs.CRIT_MODE.get();
         if (critMode != CritMode.OFF && isCrit) {
-            type = Dummmmmmy.CRITICAL_DAMAGE;
+            type.is(Dummmmmmy.CRITICAL_DAMAGE.getID());
             if (critMode == CritMode.COLOR_AND_MULTIPLIER) {
                 mult = critMult;
             }

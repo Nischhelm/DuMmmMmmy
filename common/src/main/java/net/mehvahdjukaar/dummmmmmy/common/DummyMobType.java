@@ -19,21 +19,16 @@ import net.minecraft.world.level.block.CarvedPumpkinBlock;
 public enum DummyMobType {
     UNDEFINED,
     UNDEAD,
-    WATER,
+    AQUATIC,
     ILLAGER,
     ARTHROPOD,
     NETHER_MOB,
     SCARECROW,
     DECOY;
 
-    DummyMobType() {
-
-    }
-
-
     public static DummyMobType get(ItemStack headStack, Level level) {
         if (isUndeadSkull(headStack)) return UNDEAD;
-        else if (headStack.is(Items.TURTLE_HELMET)) return WATER;
+        else if (headStack.is(Items.TURTLE_HELMET)) return AQUATIC;
         else if (headStack.is(Items.DRAGON_HEAD)) return ARTHROPOD;
         else if (headStack.is(Items.PLAYER_HEAD)) return DECOY;
         else if (headStack.is(Items.PIGLIN_HEAD)) return NETHER_MOB;
@@ -59,7 +54,6 @@ public enum DummyMobType {
                 i == Items.ZOMBIE_HEAD;
     }
 
-
     public boolean isInvertedHealAndHarm() {
         return this == UNDEAD;
     }
@@ -78,7 +72,7 @@ public enum DummyMobType {
             return this == ARTHROPOD;
         }
         if (id == Enchantments.IMPALING) {
-            return this == WATER;
+            return this == AQUATIC;
         }
         return false;
     }

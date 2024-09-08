@@ -9,7 +9,6 @@ import net.mehvahdjukaar.moonlight.api.platform.ForgeHelper;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.platform.network.NetworkHelper;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.NonNullList;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
@@ -36,6 +35,7 @@ import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.boss.wither.WitherBoss;
+import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BannerItem;
 import net.minecraft.world.item.Item;
@@ -84,12 +84,13 @@ public class TargetDummyEntity extends Mob {
 
     public TargetDummyEntity(EntityType<TargetDummyEntity> type, Level world) {
         super(type, world);
+        this.xpReward = 0;
+        this.setCanPickUpLoot(false);
+        Arrays.fill(this.armorDropChances, 1.1f);
     }
 
     public TargetDummyEntity(Level world) {
         this(Dummmmmmy.TARGET_DUMMY.get(), world);
-        this.xpReward = 0;
-        Arrays.fill(this.armorDropChances, 1.1f);
     }
 
     public float getShake(float partialTicks) {
@@ -108,20 +109,26 @@ public class TargetDummyEntity extends Mob {
         this.entityData.set(SHEARED, sheared);
     }
 
+    public boolean canScare() {
+        return this.mobType == DummyMobType.SCARECROW;
+    }
+
+    public boolean canAttract() {
+        return this.mobType == DummyMobType.DECOY;
+    }
+
     @Override
-    public void setBodyArmorItem(ItemStack stack) {
-        super.setBodyArmorItem(stack);
+    public void setItemSlot(EquipmentSlot slot, ItemStack stack) {
+        super.setItemSlot(slot, stack);
+        if (slot == EquipmentSlot.HEAD) {
+            this.mobType = DummyMobType.get(stack, level());
+        }
     }
 
     @Override
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
         builder.define(SHEARED, false);
-    }
-
-    @Override
-    public void setItemSlot(EquipmentSlot slot, ItemStack stack) {
-        super.setItemSlot(slot, stack);
     }
 
     @Override
@@ -138,6 +145,7 @@ public class TargetDummyEntity extends Mob {
         if (tag.contains("Unbreakable")) {
             this.unbreakable = tag.getBoolean("Unbreakable");
         }
+        this.mobType = DummyMobType.get(this.getItemBySlot(EquipmentSlot.HEAD), level());
     }
 
     // dress it up! :D
@@ -194,21 +202,7 @@ public class TargetDummyEntity extends Mob {
     private void swapArmorItem(Player player, EquipmentSlot slot, ItemStack armor, InteractionHand hand) {
         ItemStack oldArmor = this.getItemBySlot(slot);
         player.setItemInHand(hand, oldArmor.copy());
-        this.setItemSlot(slot, armor);
-
-        //clear mob type
-        if (slot == EquipmentSlot.HEAD) {
-            this.mobType = DummyMobType.UNDEFINED;
-        }
-
-    }
-
-    public boolean canScare() {
-        return this.mobType == DummyMobType.SCARECROW;
-    }
-
-    public boolean canAttract() {
-        return this.mobType == DummyMobType.DECOY;
+        this.setItemSlotAndDropWhenKilled(slot, armor);
     }
 
     private EquipmentSlot getClickedSlot(Vec3 vec3) {
@@ -229,16 +223,7 @@ public class TargetDummyEntity extends Mob {
 
     @Override
     public void dropEquipment() {
-        for (EquipmentSlot slot : EquipmentSlot.values()) {
-            if (slot.getType() != EquipmentSlot.Type.HUMANOID_ARMOR) {
-                continue;
-            }
-            ItemStack armor = getItemBySlot(slot);
-            if (!armor.isEmpty()) {
-                this.spawnAtLocation(armor, 1.0f);
-            }
-        }
-        this.spawnAtLocation(this.getPickResult(), 1);
+        dropPreservedEquipment();
     }
 
     public void dismantle(boolean drops) {
@@ -441,7 +426,8 @@ public class TargetDummyEntity extends Mob {
 
     @Override
     public void aiStep() {
-        //  super.aiStep();
+        // for fire and powder snow. Better call this to match what a normal entity does
+        super.aiStep();
     }
 
     @Override
@@ -470,6 +456,7 @@ public class TargetDummyEntity extends Mob {
         }
 
         this.setNoGravity(true);
+        // for some raeson this is not done in aiStep
         BlockState onState = level.getBlockState(onPos);
         onState.getBlock().stepOn(level, onPos, onState, this);
 

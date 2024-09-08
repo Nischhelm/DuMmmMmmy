@@ -53,6 +53,7 @@ public class ClientConfigs {
     private static final int COLOR_CACTUS = 0x0FA209;
     private static final int COLOR_TRUE = 0x910038;
     private static final int COLOR_WARDEN = 0x074550;
+    private static final int COLOR_WIND = 0xBEF3FF;
     private static final int COLOR_BLEED = 0x810A0A;
 
 
@@ -84,6 +85,7 @@ public class ClientConfigs {
         map.put(new IdPredicate("trident"), COLOR_TRIDENT);
         map.put(new IdPredicate("dragon_breath"), COLOR_DRAGON);
         map.put(new IdPredicate("sonic_boom"), COLOR_WARDEN);
+        map.put(new IdPredicate("wind_charge"), COLOR_WIND);
         map.put(new IdPredicate("attributeslib:bleeding"), COLOR_BLEED);
         map.put(new TagPredicate(IS_EXPLOSION), COLOR_EXPLOSION);
         map.put(new TagPredicate(IS_COLD), COLOR_FREEZING);

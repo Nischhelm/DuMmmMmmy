@@ -1,5 +1,6 @@
 package net.mehvahdjukaar.dummmmmmy.common;
 
+import net.mehvahdjukaar.dummmmmmy.Dummmmmmy;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
@@ -27,11 +28,11 @@ public enum DummyMobType {
     DECOY;
 
     public static DummyMobType get(ItemStack headStack, Level level) {
-        if (isUndeadSkull(headStack)) return UNDEAD;
-        else if (headStack.is(Items.TURTLE_HELMET)) return AQUATIC;
-        else if (headStack.is(Items.DRAGON_HEAD)) return ARTHROPOD;
+        if (headStack.is(Dummmmmmy.UNDEAD_HEADS)) return UNDEAD;
+        else if (headStack.is(Dummmmmmy.AQUATIC_MOB_HEADS)) return AQUATIC;
+        else if (headStack.is(Dummmmmmy.ARTHROPOD_HEADS)) return ARTHROPOD;
         else if (headStack.is(Items.PLAYER_HEAD)) return DECOY;
-        else if (headStack.is(Items.PIGLIN_HEAD)) return NETHER_MOB;
+        else if (headStack.is(Dummmmmmy.NETHER_MOB_HEADS)) return NETHER_MOB;
         else if (ItemStack.matches(headStack, Raid.getLeaderBannerInstance(level.registryAccess()
                 .registryOrThrow(Registries.BANNER_PATTERN).asLookup()))) return ILLAGER;
         else if (isPumpkin(headStack.getItem())) return SCARECROW;
@@ -45,13 +46,6 @@ public enum DummyMobType {
             return block instanceof CarvedPumpkinBlock || name.contains("pumpkin") || name.contains("jack_o");
         }
         return false;
-    }
-
-    private static boolean isUndeadSkull(ItemStack itemstack) {
-        Item i = itemstack.getItem();
-        return i == Items.WITHER_SKELETON_SKULL ||
-                i == Items.SKELETON_SKULL ||
-                i == Items.ZOMBIE_HEAD;
     }
 
     public boolean isInvertedHealAndHarm() {

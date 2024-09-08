@@ -44,7 +44,7 @@ public class LayerDummyShield extends ItemInHandLayer<TargetDummyEntity, TargetD
             poseStack.mulPose(Axis.ZP.rotationDegrees((left ? -angle : angle)));
 
 
-            poseStack.translate(0, 3 / 16f, 4 / 16f);
+            poseStack.translate(isBlocking ? 0 :-1/32f, 3 / 16f, 4 / 16f);
             this.itemInHandRenderer.renderItem(livingEntity, itemStack, displayContext, left, poseStack, buffer, packedLight);
             poseStack.popPose();
         }

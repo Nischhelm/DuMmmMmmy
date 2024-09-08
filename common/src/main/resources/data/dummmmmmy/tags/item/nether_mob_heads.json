@@ -1,0 +1,9 @@
+{
+  "values": [
+    "minecraft:piglin_head",
+    {"id":"piglinproliferation:piglin_alchemist_head","required":false},
+    {"id":"piglinproliferation:piglin_traveler_head","required":false},
+    {"id":"piglinproliferation:piglin_brute_head","required":false},
+    {"id":"moremobheads:magma_cube_head","required":false}
+  ]
+}

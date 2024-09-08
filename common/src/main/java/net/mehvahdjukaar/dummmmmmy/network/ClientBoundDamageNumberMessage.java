@@ -11,7 +11,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.core.Holder;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.entity.Entity;
@@ -39,7 +38,7 @@ public record ClientBoundDamageNumberMessage
     }
 
     public static Holder<DamageType> encodeDamage(DamageSource source) {
-        if (source == null) return Dummmmmmy.TRUE_DAMAGE.getHolder();
+        if (source == null) return Dummmmmmy.TRUE_DAMAGE;
         //if (critical) return Dummmmmmy.CRITICAL_DAMAGE;
         var damageType = source.typeHolder();
         return Preconditions.checkNotNull(damageType);
@@ -72,7 +71,7 @@ public record ClientBoundDamageNumberMessage
         float mult = 0;
         CritMode critMode = ClientConfigs.CRIT_MODE.get();
         if (critMode != CritMode.OFF && isCrit) {
-            type.is(Dummmmmmy.CRITICAL_DAMAGE.getID());
+            type = Dummmmmmy.CRITICAL_DAMAGE;
             if (critMode == CritMode.COLOR_AND_MULTIPLIER) {
                 mult = critMult;
             }

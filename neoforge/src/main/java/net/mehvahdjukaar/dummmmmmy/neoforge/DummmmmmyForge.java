@@ -26,10 +26,11 @@ public class DummmmmmyForge {
 
     @SubscribeEvent
     public void onEntityCriticalHit(CriticalHitEvent event) {
-        event.
-        float mod = event..getDamageModifier();
-        if (mod > 1) {
-            ModEvents.onEntityCriticalHit(event.getEntity(), event.getTarget(), event.getDamageModifier());
+        if(event.isCriticalHit()) {
+            float mod = event.getDamageMultiplier();
+            if (mod > 1) {
+                ModEvents.onEntityCriticalHit(event.getEntity(), event.getTarget(), event.getDamageMultiplier());
+            }
         }
     }
 

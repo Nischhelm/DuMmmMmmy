@@ -5,7 +5,7 @@ import net.mehvahdjukaar.dummmmmmy.common.TargetDummyItem;
 import net.mehvahdjukaar.dummmmmmy.configs.ClientConfigs;
 import net.mehvahdjukaar.dummmmmmy.configs.CommonConfigs;
 import net.mehvahdjukaar.dummmmmmy.network.ModMessages;
-import net.mehvahdjukaar.moonlight.api.misc.DataObjectReference;
+import net.mehvahdjukaar.moonlight.api.misc.DynamicHolder;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.platform.RegHelper;
 import net.minecraft.advancements.critereon.EntityPredicate;
@@ -114,6 +114,10 @@ public class Dummmmmmy {
 
     public static final Supplier<SimpleParticleType> NUMBER_PARTICLE = RegHelper.registerParticle(res("number"));
 
+    public static final TagKey<Item> AQUATIC_MOB_HEADS = TagKey.create(Registries.ITEM, res("aquatic_mob_heads"));
+    public static final TagKey<Item> ARTHROPOD_HEADS = TagKey.create(Registries.ITEM, res("arthropod_heads"));
+    public static final TagKey<Item> NETHER_MOB_HEADS = TagKey.create(Registries.ITEM, res("nether_mob_heads"));
+    public static final TagKey<Item> UNDEAD_HEADS = TagKey.create(Registries.ITEM, res("undead_heads"));
 
     public static final TagKey<DamageType> IS_THORN = TagKey.create(Registries.DAMAGE_TYPE, res("is_thorn"));
     public static final TagKey<DamageType> IS_FIRE = TagKey.create(Registries.DAMAGE_TYPE, res("is_fire"));
@@ -122,9 +126,9 @@ public class Dummmmmmy {
     public static final TagKey<DamageType> IS_COLD = TagKey.create(Registries.DAMAGE_TYPE, res("is_cold"));
 
 
-    public static final DataObjectReference<DamageType> TRUE_DAMAGE =
-            new DataObjectReference<>( res("true"),Registries.DAMAGE_TYPE);
-    public static final DataObjectReference<DamageType> CRITICAL_DAMAGE =
-            new DataObjectReference<>( res("critical"),Registries.DAMAGE_TYPE);
+    public static final DynamicHolder<DamageType> TRUE_DAMAGE =
+            DynamicHolder.of(res("true"), Registries.DAMAGE_TYPE);
+    public static final DynamicHolder<DamageType> CRITICAL_DAMAGE =
+            DynamicHolder.of(res("critical"), Registries.DAMAGE_TYPE);
 
 }

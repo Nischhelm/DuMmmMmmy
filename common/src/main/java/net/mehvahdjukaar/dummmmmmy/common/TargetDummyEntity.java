@@ -21,7 +21,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.EntityTypeTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
@@ -35,12 +34,8 @@ import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.boss.wither.WitherBoss;
-import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.BannerItem;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.ShearsItem;
+import net.minecraft.world.item.*;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.TargetBlock;
@@ -53,8 +48,11 @@ import org.jetbrains.annotations.Nullable;
 
 import java.text.DecimalFormat;
 import java.util.*;
+import java.util.function.Predicate;
 
 public class TargetDummyEntity extends Mob {
+
+    private static final int SHIELD_COOLDOWN = 100;
 
     private static final EntityDataAccessor<Boolean> SHEARED = SynchedEntityData.defineId(TargetDummyEntity.class, EntityDataSerializers.BOOLEAN);
 
@@ -80,6 +78,7 @@ public class TargetDummyEntity extends Mob {
     // used to have an independent start for the animation, otherwise the phase of the animation depends ont he damage dealt
     private float shakeAmount = 0;
     private float prevShakeAmount = 0;
+    private int shieldCooldown;
 
 
     public TargetDummyEntity(EntityType<TargetDummyEntity> type, Level world) {
@@ -171,7 +170,7 @@ public class TargetDummyEntity extends Mob {
                 equipmentSlot = this.getClickedSlot(vec);
                 if (this.hasItemInSlot(equipmentSlot)) {
                     if (level.isClientSide) return InteractionResult.CONSUME;
-                    this.swapArmorItem(player, equipmentSlot, ItemStack.EMPTY, hand);
+                    this.swapItem(player, equipmentSlot, ItemStack.EMPTY, hand);
                     success = true;
 
                 }
@@ -179,14 +178,20 @@ public class TargetDummyEntity extends Mob {
             // armor item in hand -> equip/swap
             else if (equipmentSlot.getType() == EquipmentSlot.Type.HUMANOID_ARMOR) {
                 if (level.isClientSide) return InteractionResult.CONSUME;
-                this.swapArmorItem(player, equipmentSlot, itemstack, hand);
+                this.swapItem(player, equipmentSlot, itemstack, hand);
                 success = true;
 
+            } else if (equipmentSlot.getType() == EquipmentSlot.Type.HAND && itemstack.getItem() instanceof ShieldItem) {
+                this.playSound(SoundEvents.ARMOR_EQUIP_GENERIC.value(), 1.0F, 1.0F);
+                if (level.isClientSide) return InteractionResult.CONSUME;
+                this.swapItem(player, EquipmentSlot.MAINHAND, itemstack, hand);
+
+                success = true;
             }
             //remove sack
             else if (item instanceof ShearsItem) {
                 if (!this.isSheared()) {
-                    level.playSound(player, this, SoundEvents.GROWING_PLANT_CROP, SoundSource.BLOCKS, 1.0F, 1.0F);
+                    player.playSound(SoundEvents.SNOW_GOLEM_SHEAR, 1.0F, 1.0F);
                     if (level.isClientSide) return InteractionResult.CONSUME;
                     this.setSheared(true);
                     return InteractionResult.SUCCESS;
@@ -199,7 +204,7 @@ public class TargetDummyEntity extends Mob {
         return InteractionResult.PASS;
     }
 
-    private void swapArmorItem(Player player, EquipmentSlot slot, ItemStack armor, InteractionHand hand) {
+    private void swapItem(Player player, EquipmentSlot slot, ItemStack armor, InteractionHand hand) {
         ItemStack oldArmor = this.getItemBySlot(slot);
         player.setItemInHand(hand, oldArmor.copy());
         this.setItemSlotAndDropWhenKilled(slot, armor);
@@ -226,13 +231,35 @@ public class TargetDummyEntity extends Mob {
         dropPreservedEquipment();
     }
 
+    // same as super just spawns higher
+    @Override
+    public Set<EquipmentSlot> dropPreservedEquipment(Predicate<ItemStack> predicate) {
+        Set<EquipmentSlot> set = new HashSet();
+
+        for (EquipmentSlot equipmentSlot : EquipmentSlot.values()) {
+            ItemStack itemStack = this.getItemBySlot(equipmentSlot);
+            if (!itemStack.isEmpty()) {
+                if (!predicate.test(itemStack)) {
+                    set.add(equipmentSlot);
+                } else {
+                    double d = this.getEquipmentDropChance(equipmentSlot);
+                    if (d > 1.0) {
+                        this.setItemSlot(equipmentSlot, ItemStack.EMPTY);
+                        this.spawnAtLocation(itemStack, 1);
+                    }
+                }
+            }
+        }
+
+        return set;
+    }
+
     public void dismantle(boolean drops) {
         Level level = this.level();
         if (!level.isClientSide && this.isAlive()) {
             if (drops) this.dropEquipment();
 
-            level.playSound(null, this.getX(), this.getY(), this.getZ(), this.getDeathSound(),
-                    this.getSoundSource(), 1.0F, 1.0F);
+            this.playSound(this.getDeathSound(), 1.0F, 1.0F);
 
             ((ServerLevel) level).sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, Blocks.OAK_PLANKS.defaultBlockState()),
                     this.getX(), this.getY(0.6666666666666666D), this.getZ(), 10, (this.getBbWidth() / 4.0F),
@@ -257,6 +284,35 @@ public class TargetDummyEntity extends Mob {
     @Override
     public void kill() {
         this.dismantle(true);
+    }
+
+    @Override
+    public boolean isBlocking() {
+        return shieldCooldown == 0 && !this.getItemInHand(InteractionHand.MAIN_HAND).isEmpty();
+    }
+
+    @Override
+    protected void blockUsingShield(LivingEntity attacker) {
+        super.blockUsingShield(attacker);
+        // same as player
+        if (attacker.canDisableShield()) {
+            this.disableShield();
+        }
+    }
+
+    //same as player
+    private void disableShield() {
+        this.shieldCooldown = SHIELD_COOLDOWN;
+        this.playSound(SoundEvents.SHIELD_BREAK, 0.8F, 0.8F + this.level().random.nextFloat() * 0.4F);
+        this.level().broadcastEntityEvent(this, (byte) 30);
+    }
+
+    @Override
+    public void handleEntityEvent(byte id) {
+        if (id == 30) {
+            this.shieldCooldown = SHIELD_COOLDOWN;
+        }
+        super.handleEntityEvent(id);
     }
 
     @Override
@@ -433,6 +489,9 @@ public class TargetDummyEntity extends Mob {
     @Override
     public void tick() {
 
+        if (this.shieldCooldown > 0) {
+            this.shieldCooldown--;
+        }
         this.critRecordsThisTick.clear();
 
         //show true damage that has bypassed hurt method

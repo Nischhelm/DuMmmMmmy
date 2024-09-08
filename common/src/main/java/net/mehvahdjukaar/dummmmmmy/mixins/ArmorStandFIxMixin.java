@@ -15,8 +15,8 @@ public abstract class ArmorStandFIxMixin {
 
     @Inject(method = "useOn", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/decoration/ArmorStand;moveTo(DDDFF)V",
     shift = At.Shift.AFTER))
-    public void fixInitialArmorStandRot(UseOnContext context, CallbackInfoReturnable<InteractionResult> cir,
-                                        @Local ArmorStand stand) {
+    public void dummy$fixInitialArmorStandRot(UseOnContext context, CallbackInfoReturnable<InteractionResult> cir,
+                                              @Local ArmorStand stand) {
         stand.setYHeadRot(stand.getYRot());
     }
 }

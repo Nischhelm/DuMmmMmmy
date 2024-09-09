@@ -39,7 +39,7 @@ public class LayerDummyCape extends RenderLayer<TargetDummyEntity, TargetDummyMo
     public void render(PoseStack poseStack, MultiBufferSource bufferSource, int packedLight,
                        TargetDummyEntity livingEntity, float limbSwing, float limbSwingAmount, float partialTicks,
                        float ageInTicks, float netHeadYaw, float headPitch) {
-        if (!livingEntity.isInvisible() && livingEntity.isBoss()) {
+        if (!livingEntity.isInvisible()) {
             ItemStack banner = livingEntity.getOffhandItem();
 
             if (banner.getItem() instanceof BannerItem bi) {

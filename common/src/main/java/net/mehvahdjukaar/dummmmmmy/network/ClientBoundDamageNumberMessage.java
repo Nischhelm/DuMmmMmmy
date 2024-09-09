@@ -33,11 +33,11 @@ public record ClientBoundDamageNumberMessage
         return new ClientBoundDamageNumberMessage(entityID, damageAmount, damageType, isCrit, critMult);
     }
 
-    public ClientBoundDamageNumberMessage(int id, float damage, DamageSource source, @Nullable CritRecord critical) {
+    public ClientBoundDamageNumberMessage(int id, float damage, @Nullable DamageSource source, @Nullable CritRecord critical) {
         this(id, damage, encodeDamage(source), critical != null, critical == null ? 0 : critical.getMultiplier());
     }
 
-    public static Holder<DamageType> encodeDamage(DamageSource source) {
+    public static Holder<DamageType> encodeDamage(@Nullable DamageSource source) {
         if (source == null) return Dummmmmmy.TRUE_DAMAGE;
         //if (critical) return Dummmmmmy.CRITICAL_DAMAGE;
         var damageType = source.typeHolder();

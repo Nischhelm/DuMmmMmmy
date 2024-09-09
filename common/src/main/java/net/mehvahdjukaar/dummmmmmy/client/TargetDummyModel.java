@@ -18,6 +18,7 @@ public class TargetDummyModel<T extends TargetDummyEntity> extends HumanoidModel
 
     private float bodyWobble = 0;
     private float headSideWobble = 0;
+    private float rechargingAnim = 0;
 
     public TargetDummyModel(ModelPart modelPart) {
         super(modelPart);
@@ -109,11 +110,17 @@ public class TargetDummyModel<T extends TargetDummyEntity> extends HumanoidModel
             this.headSideWobble = 0;
         }
 
-       // un-rotate the stand plate, so it's aligned to the block grid
-       this.standPlate.xRot = 0.0F;
-       this.standPlate.yRot =  Mth.DEG_TO_RAD * -Mth.rotLerp(partialTick, entity.yBodyRotO, entity.yBodyRot);
-       this.standPlate.zRot = 0.0F;
+        // un-rotate the stand plate, so it's aligned to the block grid
+        this.standPlate.xRot = 0.0F;
+        this.standPlate.yRot = Mth.DEG_TO_RAD * -Mth.rotLerp(partialTick, entity.yBodyRotO, entity.yBodyRot);
+        this.standPlate.zRot = 0.0F;
 
+        float recharge = entity.getRechargingAnimation(partialTick);
+        this.rechargingAnim = smoothRamp(recharge, 0.1);
+    }
+
+    private float smoothRamp(float number, double cutoff) {
+        return (float) (number < cutoff ? number / cutoff : 1);
     }
 
     @Override
@@ -147,14 +154,14 @@ public class TargetDummyModel<T extends TargetDummyEntity> extends HumanoidModel
 
 
         this.head.setPos(0.0F, 0.0F + yOffsetIn, 0.0F);
+
+
         this.rotateModelX(this.head, 0, 24 + yOffsetIn, 0, xangle);
-        //mod support
-        this.hat.copyFrom(this.head);
-
-
-        this.head.xRot = -bodyWobble; //-r
+        this.head.xRot = -bodyWobble + rechargingAnim*0.8f; //-r
         this.head.zRot = headSideWobble; //r2
 
+        //mod support
+        this.hat.copyFrom(this.head);
 
         //rotate arms up
         this.rightArm.zRot = (float) Math.PI / 2f;
@@ -162,6 +169,10 @@ public class TargetDummyModel<T extends TargetDummyEntity> extends HumanoidModel
         //swing arm
         this.rightArm.xRot = bodyWobble * n;
         this.leftArm.xRot = bodyWobble * n;
+
+        this.leftArm.zRot += rechargingAnim * 0.25f;
+        this.rightArm.zRot += rechargingAnim * -0.25f;
+
     }
 
 }

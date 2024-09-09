@@ -4,6 +4,7 @@ import net.mehvahdjukaar.dummmmmmy.Dummmmmmy;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigBuilder;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigType;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ModConfigHolder;
+import net.minecraft.world.BossEvent;
 
 import java.util.Collections;
 import java.util.List;
@@ -22,11 +23,12 @@ public class CommonConfigs {
     public static final Supplier<Integer> RADIUS;
     public static final Supplier<Boolean> DAMAGE_EQUIPMENT;
     public static final Supplier<Boolean> DECOY;
+    public static final Supplier<BossEvent.BossBarColor> BOSS_HEALTH_COLOR;
     public static final Supplier<DpsMode> DYNAMIC_DPS;
-    public static final Supplier<Integer> MAX_COMBAT_INTERVAL;
     public static final Supplier<Mode> DAMAGE_NUMBERS_MODE;
     public static final Supplier<Mode> HEALING_NUMBERS_MODE;
     public static final Supplier<Double> DROP_XP;
+    public static final Supplier<Integer> BOSS_HEALTH;
 
     public enum Mode {
         ALL_ENTITIES, ALL_PLAYERS, LOCAL_PLAYER, NONE;
@@ -54,14 +56,16 @@ public class CommonConfigs {
 
         DAMAGE_EQUIPMENT = builder.comment("Enable this to prevent your equipment from getting damaged when attacking the dummy")
                 .define("disable_equipment_damage", true);
-
-        MAX_COMBAT_INTERVAL = builder.comment("Time in ticks that it takes for a dummy to be considered out of combat after having recieved damage")
-                .define("maximum_out_of_combat_interval", 6 * 20, 20, 1000);
         DECOY = builder.comment("Makes monsters target a dummy that is wearing a player head")
                 .define("dummy_decoy", false);
 
+        BOSS_HEALTH_COLOR = builder.comment("Health bar color when in boss mode")
+                .define("boss_health_bar_color", BossEvent.BossBarColor.YELLOW);
         DROP_XP = builder.comment("Makes dummy drop xp when hit. Training yay! Depends on damage done")
                         .define("xp_per_damage_on_hit", 0, 0d, 100);
+
+        BOSS_HEALTH = builder.comment("How much health the dummy should have when in boss mode (when given a banner)")
+                .define("boss_health", 100, 1, 1000000);
         builder.pop();
 
         builder.push("mobs_damage_numbers");
@@ -72,6 +76,7 @@ public class CommonConfigs {
         builder.pop();
 
         SPEC = builder.build();
+        SPEC.forceLoad();
     }
 
     public enum DpsMode {

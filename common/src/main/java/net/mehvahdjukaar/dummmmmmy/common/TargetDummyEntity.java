@@ -14,6 +14,7 @@ import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -49,20 +50,22 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.*;
 import java.util.function.Predicate;
 
 public class TargetDummyEntity extends Mob {
 
     private static final int SHIELD_COOLDOWN = 100;
+    private static final int HEALTH_RECHARGE_TIME = 200;
 
     private static final EntityDataAccessor<Boolean> SHEARED = SynchedEntityData.defineId(TargetDummyEntity.class, EntityDataSerializers.BOOLEAN);
-    private static final EntityDataAccessor<Boolean> IS_BOSS = SynchedEntityData.defineId(TargetDummyEntity.class, EntityDataSerializers.BOOLEAN);
 
     // used to calculate the whole damage in one tick, in case there are multiple sources
     private int lastTickActuallyDamaged;
     // currently, recording damage taken
     private float totalDamageTakenInCombat;
+    private float totalHealingTakenInCombat;
     //has just been hit by critical? server side
     private final List<CritRecord> critRecordsThisTick = new ArrayList<>();
     private DummyMobType mobType = DummyMobType.UNDEFINED;
@@ -70,6 +73,9 @@ public class TargetDummyEntity extends Mob {
     private DamageSource currentDamageSource = null;
     private boolean unbreakable = false;
     private final PlayersTracker playersTracker = new PlayersTracker();
+    private int healthRechargeTimer = 0;
+    private float lastHealth;
+    private boolean isBoss = false;
 
     //client values
 
@@ -89,6 +95,7 @@ public class TargetDummyEntity extends Mob {
         this.xpReward = 0;
         this.setCanPickUpLoot(false);
         Arrays.fill(this.armorDropChances, 1.1f);
+        this.playersTracker.showHealthBar(false);
     }
 
     public TargetDummyEntity(Level world) {
@@ -112,11 +119,11 @@ public class TargetDummyEntity extends Mob {
     }
 
     public boolean isBoss() {
-        return this.entityData.get(IS_BOSS);
+        return isBoss;
     }
 
     public void setBoss(boolean boss) {
-        this.entityData.set(IS_BOSS, boss);
+        this.isBoss = boss;
         this.playersTracker.showHealthBar(boss);
     }
 
@@ -140,13 +147,13 @@ public class TargetDummyEntity extends Mob {
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
         builder.define(SHEARED, false);
-        builder.define(IS_BOSS, false);
     }
 
     @Override
     public void addAdditionalSaveData(CompoundTag tag) {
         super.addAdditionalSaveData(tag);
         tag.putBoolean("Sheared", this.isSheared());
+        tag.putInt("HealthRechargeTimer", this.healthRechargeTimer);
         if (this.unbreakable) tag.putBoolean("Unbreakable", true);
     }
 
@@ -154,11 +161,13 @@ public class TargetDummyEntity extends Mob {
     public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
         this.setSheared(tag.getBoolean("Sheared"));
+        this.healthRechargeTimer = tag.getInt("HealthRechargeTimer");
         if (tag.contains("Unbreakable")) {
             this.unbreakable = tag.getBoolean("Unbreakable");
         }
         this.mobType = DummyMobType.get(this.getItemBySlot(EquipmentSlot.HEAD));
         this.setBoss(this.getItemBySlot(EquipmentSlot.OFFHAND).getItem() instanceof BannerItem);
+        this.lastHealth = this.getHealth();
     }
 
     // dress it up! :D
@@ -295,8 +304,26 @@ public class TargetDummyEntity extends Mob {
         }
     }
 
-    protected boolean hasInfiniteHealth() {
-        return this.isBoss() && !playersTracker.isEmpty();
+    private void setRecharging() {
+        this.healthRechargeTimer = HEALTH_RECHARGE_TIME;
+        this.totalHealingTakenInCombat = 0;
+        this.totalDamageTakenInCombat = 0;
+        CombatTracker tracker = this.getCombatTracker();
+        tracker.inCombat = false;
+        tracker.entries.clear();
+        this.level().broadcastEntityEvent(this, (byte) 32);
+    }
+
+    public float getRechargingAnimation(float partialTicks) {
+        return Math.max(0, Mth.lerp(partialTicks, this.healthRechargeTimer, this.healthRechargeTimer-1) / HEALTH_RECHARGE_TIME);
+    }
+
+    public boolean isRecharging() {
+        return this.healthRechargeTimer > 0;
+    }
+
+    public boolean hasInfiniteHealth() {
+        return !(this.isBoss() && playersTracker.hasPlayers());
     }
 
     @Override
@@ -326,6 +353,8 @@ public class TargetDummyEntity extends Mob {
         // same as player
         if (attacker.canDisableShield()) {
             this.disableShield();
+        }else{
+            this.playSound(SoundEvents.SHIELD_BLOCK, 1.0F, 0.8F + this.level().random.nextFloat() * 0.4F);
         }
     }
 
@@ -337,16 +366,26 @@ public class TargetDummyEntity extends Mob {
     }
 
     @Override
+    protected void blockedByShield(LivingEntity defender) {
+        super.blockedByShield(defender);
+        // shield sound just plays on client side for receiving player for some reason
+    }
+
+    @Override
     public void handleEntityEvent(byte id) {
         if (id == 30) {
             this.shieldCooldown = SHIELD_COOLDOWN;
+        }
+        if(id == 32){
+            this.healthRechargeTimer = HEALTH_RECHARGE_TIME;
         }
         super.handleEntityEvent(id);
     }
 
     @Override
     public boolean isInvulnerableTo(DamageSource source) {
-        return super.isInvulnerableTo(source) || source == this.damageSources().drown() ||
+        return isRecharging() ||
+                super.isInvulnerableTo(source) || source == this.damageSources().drown() ||
                 source == this.damageSources().inWall();
     }
 
@@ -403,42 +442,63 @@ public class TargetDummyEntity extends Mob {
 
             if (level.isClientSide) return;
             float damage = this.getHealth() - newHealth;
-            if (damage > 0) {
-                DamageSource actualSource = null;
-                //Accounts for forge event modifying damage... I think. On fabric this isn't set yet
-                if (PlatHelper.getPlatform().isForge()) {
-                    CombatEntry currentCombatEntry = getLastEntry();
-                    //Is same damage as current one. Sanity-check, I guess
-                    if (currentCombatEntry != null && getCombatTracker().lastDamageTime == this.tickCount
-                        //idk why but some rounding errors could occur. we still want to sanity check this i think? or not
-                        //&& DoubleMath.fuzzyEquals(damage, currentCombatEntry.damage(), 0.0001)
-                    ) {
-                        actualSource = currentCombatEntry.source();
-                        if (Math.abs(damage - currentCombatEntry.damage()) > 0.0001) {
-                            int error = 0;
-                        }
-                    }
-                } else actualSource = currentDamageSource;
+            DamageSource actualSource = getActualDamageSource(damage);
 
-                if (actualSource != null) {
-                    onActuallyDamagedOrTrueDamageDetected(damage, actualSource);
-                }
+            if (actualSource != null || damage < 0) {
+                onActuallyDamagedOrTrueDamageDetected(damage, actualSource);
+            }
+            this.lastTickActuallyDamaged = this.tickCount;
+            if (!hasInfiniteHealth()) {
+                super.setHealth(newHealth);
+                this.lastHealth = getHealth();
+                playersTracker.updateHealth();
 
-                this.lastTickActuallyDamaged = this.tickCount;
-
-                if (hasInfiniteHealth()) {
-                    super.setHealth(newHealth);
-                    playersTracker.updateHealth();
+                if(newHealth<=0){
+                    setRecharging();
                 }
             }
         }
     }
 
+    private @Nullable DamageSource getActualDamageSource(float damage) {
+        DamageSource actualSource = null;
+        //Accounts for forge event modifying damage... I think. On fabric this isn't set yet
+        if (PlatHelper.getPlatform().isForge()) {
+            CombatEntry currentCombatEntry = getLastEntry();
+            //Is same damage as current one. Sanity-check, I guess
+            if (currentCombatEntry != null && getCombatTracker().lastDamageTime == this.tickCount
+                //idk why but some rounding errors could occur. we still want to sanity check this i think? or not
+                //&& DoubleMath.fuzzyEquals(damage, currentCombatEntry.damage(), 0.0001)
+            ) {
+                actualSource = currentCombatEntry.source();
+                if (Math.abs(damage - currentCombatEntry.damage()) > 0.0001) {
+                    int error = 0;
+                }
+            }
+        } else actualSource = currentDamageSource;
+        return actualSource;
+    }
+
+    @Override
+    public boolean isDeadOrDying() {
+        // can never die from health
+        return false;
+    }
+
     private void onActuallyDamagedOrTrueDamageDetected(float damage, @Nullable DamageSource actualSource) {
-        if (damage <= 0) return;
+        if (this.isRecharging()) return;
+        if (damage < 0) {
+            //keep showing heals to players
+            playersTracker.getPlayers().forEach(playersTracker::track);
+        }
         showDamageAndAnimationsToClients(damage, actualSource);
+        if (damage < 0) {
+            this.totalHealingTakenInCombat -= damage;
+        } else {
+            this.totalDamageTakenInCombat += damage;
+        }
         updateTargetBlock(damage);
-        if (level() instanceof ServerLevel sl) {
+        if (level() instanceof ServerLevel sl && damage > 0) {
             float xp = CommonConfigs.DROP_XP.get().floatValue() * damage;
             if (xp > 0) {
                 ExperienceOrb.award(sl, this.position().add(0, 0.5, 0), Mth.floor(xp));
@@ -462,33 +522,31 @@ public class TargetDummyEntity extends Mob {
         if (this.lastTickActuallyDamaged != this.tickCount) {
             this.animationPosition = 0;
         }
-        this.animationPosition = Math.min(this.animationPosition + damage, 60f);
+        if (damage > 0) {
+            this.animationPosition = Math.min(this.animationPosition + damage, 60f);
 
-        //custom update packet to send animation position
-        NetworkHelper.sendToAllClientPlayersTrackingEntity(this,
-                new ClientBoundUpdateAnimationMessage(this.getId(), this.animationPosition));
-
-        if (source != null) {
-            if (!playersTracker.isEmpty()) {
-                CritRecord critRec = null;
-                for (int j = critRecordsThisTick.size() - 1; j >= 0; j--) {
-                    var c = critRecordsThisTick.get(j);
-                    if (c.matches(source)) {
-                        critRec = c;
-                        break;
-                    }
-                }
-
-                for (var p : this.playersTracker.getPlayers()) {
-                    NetworkHelper.sendToClientPlayer(p,
-                            new ClientBoundDamageNumberMessage(this.getId(), damage, source, critRec));
-                }
-                if (critRec != null) {
-                    this.critRecordsThisTick.remove(critRec);
+            //custom update packet to send animation position
+            NetworkHelper.sendToAllClientPlayersTrackingEntity(this,
+                    new ClientBoundUpdateAnimationMessage(this.getId(), this.animationPosition));
+        }
+        if (playersTracker.hasPlayers()) {
+            CritRecord critRec = null;
+            for (int j = critRecordsThisTick.size() - 1; j >= 0; j--) {
+                var c = critRecordsThisTick.get(j);
+                if (c.matches(source)) {
+                    critRec = c;
+                    break;
                 }
             }
+
+            for (var p : this.playersTracker.getPlayers()) {
+                NetworkHelper.sendToClientPlayer(p,
+                        new ClientBoundDamageNumberMessage(this.getId(), damage, source, critRec));
+            }
+            if (critRec != null) {
+                this.critRecordsThisTick.remove(critRec);
+            }
         }
-        this.totalDamageTakenInCombat += damage;
     }
 
     private void updateTargetBlock(float damage) {
@@ -522,30 +580,41 @@ public class TargetDummyEntity extends Mob {
 
     @Override
     public void tick() {
-
         if (this.shieldCooldown > 0) {
             this.shieldCooldown--;
         }
         this.critRecordsThisTick.clear();
 
-        //show true damage that has bypassed hurt method
         Level level = this.level();
-        if (lastTickActuallyDamaged + 1 == this.tickCount && !level.isClientSide) {
-            float trueDamage = this.getMaxHealth() - this.getHealth();
-            if (trueDamage > 0) {
-                if (!hasInfiniteHealth()) this.heal(trueDamage);
-                onActuallyDamagedOrTrueDamageDetected(trueDamage, null);
+        BlockPos onPos = this.getOnPos();
+        float health = this.getHealth();
+
+        if (!level.isClientSide) {
+
+            //show true damage that has bypassed hurt method
+            if (lastTickActuallyDamaged + 1 == this.tickCount && !level.isClientSide) {
+                float trueDamage = lastHealth - health;
+                if (trueDamage > 0) {
+                    if (hasInfiniteHealth()) {
+                        // unfortunately we cant show true damage when in boss mode
+                        this.heal(trueDamage);
+                    }
+                    onActuallyDamagedOrTrueDamageDetected(trueDamage, null);
+                }
+            }
+
+            //check if on stable ground. used for automation
+            if (level.getGameTime() % 20L == 0L) {
+                if (level.isEmptyBlock(onPos)) {
+                    this.dismantle(true);
+                    return;
+                }
             }
         }
 
-        BlockPos onPos = this.getOnPos();
-
-        //check if on stable ground. used for automation
-        if (!level.isClientSide && level.getGameTime() % 20L == 0L) {
-            if (level.isEmptyBlock(onPos)) {
-                this.dismantle(true);
-                return;
-            }
+        if (healthRechargeTimer != 0) {
+            healthRechargeTimer--;
+            this.setHealth(health + this.getMaxHealth() / HEALTH_RECHARGE_TIME);
         }
 
         this.setNoGravity(true);
@@ -584,14 +653,14 @@ public class TargetDummyEntity extends Mob {
 
         //TODO: move dps mode logic to client
         //am i being attacked?
-        tracker.recheckStatus();
-        if (tracker.inCombat && this.totalDamageTakenInCombat > 0) {
+        if (tracker.inCombat) {
             float combatDuration = tracker.getCombatDuration();
-            this.playersTracker.update(combatDuration, this.totalDamageTakenInCombat);
-
+            this.playersTracker.update(combatDuration, this.totalDamageTakenInCombat, this.totalHealingTakenInCombat);
         } else {
-            this.playersTracker.clear();
-            this.totalDamageTakenInCombat = 0;
+            totalDamageTakenInCombat = 0;
+            if (!playersTracker.hasPlayers()) {
+                totalHealingTakenInCombat = 0;
+            }
         }
     }
 
@@ -672,6 +741,18 @@ public class TargetDummyEntity extends Mob {
         return super.canBeAffected(effectInstance);
     }
 
+    @Override
+    public void setCustomName(@Nullable Component name) {
+        super.setCustomName(name);
+        this.playersTracker.healthBar.setName(this.getDisplayName());
+    }
+
+    @Override
+    public void stopSeenByPlayer(ServerPlayer serverPlayer) {
+        super.stopSeenByPlayer(serverPlayer);
+        this.playersTracker.unTrack(serverPlayer);
+    }
+
 
     public @NotNull DummyMobType getMobType() {
         return this.mobType;
@@ -681,7 +762,7 @@ public class TargetDummyEntity extends Mob {
         return Mob.createMobAttributes()
                 .add(Attributes.FOLLOW_RANGE, 16.0D)
                 .add(Attributes.MOVEMENT_SPEED, 0D)
-                .add(Attributes.MAX_HEALTH, 40D)
+                .add(Attributes.MAX_HEALTH, CommonConfigs.BOSS_HEALTH.get())
                 .add(Attributes.ARMOR, 0D)
                 .add(Attributes.ATTACK_DAMAGE, 0D)
                 .add(Attributes.FLYING_SPEED, 0D);
@@ -699,7 +780,7 @@ public class TargetDummyEntity extends Mob {
         return damageNumberPos++;
     }
 
-    private void showDpsMessageTo(ServerPlayer player, float combatDuration, float dps, boolean outOfCompat) {
+    private void showDpsMessageTo(ServerPlayer player, float combatDuration, float dps, float hps, boolean outOfCompat) {
         CommonConfigs.DpsMode dpsMode = CommonConfigs.DYNAMIC_DPS.get();
 
         if (dpsMode != CommonConfigs.DpsMode.OFF && combatDuration > 0) {
@@ -710,9 +791,31 @@ public class TargetDummyEntity extends Mob {
 
             //here is to visually show dps on a status message
             if (showMessage && player.distanceTo(this) < 64) {
-                player.displayClientMessage(Component.translatable("message.dummmmmmy.dps",
-                        this.getDisplayName(),
-                        new DecimalFormat("#.##").format(dps)), true);
+                Component message;
+                DecimalFormatSymbols symbols = new DecimalFormatSymbols();
+                symbols.setDecimalSeparator('.');
+                DecimalFormat decimalFormat = new DecimalFormat("#.##", symbols);
+                Component dpsMessage = Component.translatable("message.dummmmmmy.dps",
+                        decimalFormat.format(dps));
+                Component hpsMessage = Component.translatable("message.dummmmmmy.hps",
+                        decimalFormat.format(hps));
+
+                if (dps > 0 && hps > 0) {
+                    message = Component.translatable("message.dummmmmmy.double",
+                            this.getDisplayName(),
+                            dpsMessage,
+                            hpsMessage);
+                } else if (dps > 0) {
+                    message = Component.translatable("message.dummmmmmy.single",
+                            this.getDisplayName(),
+                            dpsMessage);
+                } else if (hps > 0) {
+                    message = Component.translatable("message.dummmmmmy.single",
+                            this.getDisplayName(),
+                            hpsMessage);
+                } else return;
+
+                player.displayClientMessage(message, true);
 
             }
         }
@@ -721,7 +824,7 @@ public class TargetDummyEntity extends Mob {
     private class PlayersTracker {
 
         private final Map<ServerPlayer, Integer> currentlyAttacking = new HashMap<>();
-        private final ServerBossEvent healthBar = new ServerBossEvent(getDisplayName(), BossEvent.BossBarColor.YELLOW,
+        private final ServerBossEvent healthBar = new ServerBossEvent(getDisplayName(), CommonConfigs.BOSS_HEALTH_COLOR.get(),
                 BossEvent.BossBarOverlay.NOTCHED_12);
 
         public void showHealthBar(boolean on) {
@@ -733,14 +836,21 @@ public class TargetDummyEntity extends Mob {
         }
 
         public void track(ServerPlayer serverPlayer) {
-            currentlyAttacking.put(serverPlayer, CommonConfigs.MAX_COMBAT_INTERVAL.get());
+            currentlyAttacking.put(serverPlayer, 300); //needs to match combat tracker. This works the same but per player instead of per receiving entity
+            healthBar.addPlayer(serverPlayer);
         }
 
-        public void update(float combatDuration, float totalDamageTakenInCombat) {
+        public void unTrack(ServerPlayer serverPlayer) {
+            currentlyAttacking.remove(serverPlayer);
+            healthBar.removePlayer(serverPlayer);
+        }
+
+        public void update(float combatDuration, float totalDamageTakenInCombat, float totalHealingTakenInCombat) {
             List<ServerPlayer> removedPlayers = new ArrayList<>();
 
             float seconds = combatDuration / 20f + 1;
             float dps = totalDamageTakenInCombat / seconds;
+            float hps = totalHealingTakenInCombat / seconds;
 
             for (var e : currentlyAttacking.entrySet()) {
                 ServerPlayer p = e.getKey();
@@ -751,15 +861,16 @@ public class TargetDummyEntity extends Mob {
                     removedPlayers.add(p);
                     outOfCompat = true;
                 }
-                showDpsMessageTo(p, combatDuration, dps, outOfCompat);
+                showDpsMessageTo(p, combatDuration, dps, hps, outOfCompat);
             }
-            removedPlayers.forEach(currentlyAttacking::remove);
-            removedPlayers.forEach(healthBar::removePlayer);
+            if (!TargetDummyEntity.this.isRecharging()) {
+                removedPlayers.forEach(this::unTrack);
+            }
         }
 
 
-        public boolean isEmpty() {
-            return currentlyAttacking.isEmpty();
+        public boolean hasPlayers() {
+            return !currentlyAttacking.isEmpty();
         }
 
         public Collection<ServerPlayer> getPlayers() {
@@ -768,6 +879,7 @@ public class TargetDummyEntity extends Mob {
 
         public void clear() {
             currentlyAttacking.clear();
+            healthBar.removeAllPlayers();
         }
 
     }

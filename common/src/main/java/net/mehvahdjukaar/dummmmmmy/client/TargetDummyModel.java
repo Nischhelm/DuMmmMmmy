@@ -53,9 +53,9 @@ public class TargetDummyModel<T extends TargetDummyEntity> extends HumanoidModel
     }
 
     //don't touch. it just works
-    public void rotateModelX(ModelPart model, float nrx, float nry, float nrz, float angle) {
+    public void rotateModelX(ModelPart model, float pivotX, float pivotY, float pivotZ, float angle) {
         Vec3 oldRot = new Vec3(model.x, model.y, model.z);
-        Vec3 actualRot = new Vec3(nrx, nry, nrz);
+        Vec3 actualRot = new Vec3(pivotX, pivotY, pivotZ);
 
         Vec3 newRot = actualRot.add(oldRot.subtract(actualRot).xRot(-angle));
 
@@ -63,9 +63,9 @@ public class TargetDummyModel<T extends TargetDummyEntity> extends HumanoidModel
         model.xRot = angle;
     }
 
-    public void rotateModelY(ModelPart model, float nrx, float nry, float nrz, float angle, int mult) {
+    public void rotateModelY(ModelPart model, float pivotX, float pivotY, float pivotZ, float angle, int mult) {
         Vec3 oldRot = new Vec3(model.x, model.y, model.z);
-        Vec3 actualRot = new Vec3(nrx, nry, nrz);
+        Vec3 actualRot = new Vec3(pivotX, pivotY, pivotZ);
 
         Vec3 newRot = actualRot.add(oldRot.subtract(actualRot).xRot(-angle));
 
@@ -134,7 +134,6 @@ public class TargetDummyModel<T extends TargetDummyEntity> extends HumanoidModel
 
         float xangle = bodyWobble / 2;
 
-
         this.leftLeg.setPos(0, 12.0F + yOffsetIn, 0.0F);
         this.rotateModelX(this.leftLeg, 0, 24 + yOffsetIn, 0, xangle);
         //for mod support
@@ -143,7 +142,6 @@ public class TargetDummyModel<T extends TargetDummyEntity> extends HumanoidModel
 
         this.body.setPos(0.0F, 0.0F + yOffsetIn, 0.0F);
         this.rotateModelX(this.body, 0, 24 + yOffsetIn, 0, xangle);
-
 
         this.rightArm.setPos(-2.5F, 2.0F + yOffsetIn, -0.005F);
         this.rotateModelY(this.rightArm, 0, 24 + yOffsetIn, 0, xangle, -1);
@@ -156,7 +154,7 @@ public class TargetDummyModel<T extends TargetDummyEntity> extends HumanoidModel
 
 
         this.rotateModelX(this.head, 0, 24 + yOffsetIn, 0, xangle);
-        this.head.xRot = -bodyWobble + rechargingAnim*0.8f; //-r
+        this.head.xRot = -bodyWobble + rechargingAnim * 0.8f; //-r
         this.head.zRot = headSideWobble; //r2
 
         //mod support
@@ -171,6 +169,7 @@ public class TargetDummyModel<T extends TargetDummyEntity> extends HumanoidModel
 
         this.leftArm.zRot += rechargingAnim * 0.25f;
         this.rightArm.zRot += rechargingAnim * -0.25f;
+
 
     }
 

@@ -115,6 +115,7 @@ public class Dummmmmmy {
             res(TARGET_DUMMY_NAME), () -> new TargetDummyItem(new Item.Properties().stacksTo(16)));
 
     public static final Supplier<SimpleParticleType> NUMBER_PARTICLE = RegHelper.registerParticle(res("number"));
+    public static final Supplier<SimpleParticleType> HAY_PARTICLE = RegHelper.registerParticle(res("hay"));
 
     public static final TagKey<Item> AQUATIC_MOB_HEADS = TagKey.create(Registries.ITEM, res("aquatic_mob_heads"));
     public static final TagKey<Item> ARTHROPOD_HEADS = TagKey.create(Registries.ITEM, res("arthropod_heads"));

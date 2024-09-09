@@ -16,8 +16,10 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.model.ModelBakery;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.BannerItem;
 import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.item.ElytraItem;
 import net.minecraft.world.item.ItemStack;
 
 public class LayerDummyCape extends RenderLayer<TargetDummyEntity, TargetDummyModel<TargetDummyEntity>> {
@@ -66,8 +68,13 @@ public class LayerDummyCape extends RenderLayer<TargetDummyEntity, TargetDummyMo
 
                 poseStack.mulPose(Axis.XP.rotation((bodyXRot + Mth.PI + Math.max(0, capeSwingAngle))));
                 poseStack.scale(-scale, -scale, 1);
-
-                poseStack.translate(0, 0, 1 / 16f);
+                float dz;
+                ItemStack chestSlot = livingEntity.getItemBySlot(EquipmentSlot.CHEST);
+                if(chestSlot.isEmpty() || (chestSlot.getItem() instanceof ElytraItem)){
+                    dz = 1/16f;
+                }
+                else dz = 0;
+                poseStack.translate(0, 0, dz);
 
                 DyeColor dyeColor = bi.getColor();
                 var patterns = banner.get(DataComponents.BANNER_PATTERNS);

@@ -14,7 +14,6 @@ import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -49,8 +48,6 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
 import java.util.*;
 import java.util.function.Predicate;
 
@@ -60,6 +57,7 @@ public class TargetDummyEntity extends Mob {
     private static final int HEALTH_RECHARGE_TIME = 200;
 
     private static final EntityDataAccessor<Boolean> SHEARED = SynchedEntityData.defineId(TargetDummyEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> BOSS = SynchedEntityData.defineId(TargetDummyEntity.class, EntityDataSerializers.BOOLEAN);
 
     // used to calculate the whole damage in one tick, in case there are multiple sources
     private int lastTickActuallyDamaged;
@@ -75,7 +73,6 @@ public class TargetDummyEntity extends Mob {
     private final PlayersTracker playersTracker = new PlayersTracker();
     private int healthRechargeTimer = 0;
     private float lastHealth;
-    private boolean isBoss = false;
 
     //client values
 
@@ -119,11 +116,19 @@ public class TargetDummyEntity extends Mob {
     }
 
     public boolean isBoss() {
-        return isBoss;
+        return this.entityData.get(BOSS);
+    }
+
+    @Override
+    public void onSyncedDataUpdated(EntityDataAccessor<?> dataAccessor) {
+        super.onSyncedDataUpdated(dataAccessor);
+        if(dataAccessor == BOSS){
+            this.playersTracker.showHealthBar(this.isBoss());
+        }
     }
 
     public void setBoss(boolean boss) {
-        this.isBoss = boss;
+        this.entityData.set(BOSS, boss);
         this.playersTracker.showHealthBar(boss);
     }
 
@@ -147,6 +152,7 @@ public class TargetDummyEntity extends Mob {
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
         builder.define(SHEARED, false);
+        builder.define(BOSS, false);
     }
 
     @Override
@@ -263,6 +269,7 @@ public class TargetDummyEntity extends Mob {
     @Override
     public void dropEquipment() {
         dropPreservedEquipment();
+        this.spawnAtLocation(getPickResult(), 1);
     }
 
     // same as super just spawns higher
@@ -284,6 +291,8 @@ public class TargetDummyEntity extends Mob {
                 }
             }
         }
+
+
 
         return set;
     }
@@ -314,7 +323,7 @@ public class TargetDummyEntity extends Mob {
     }
 
     public float getRechargingAnimation(float partialTicks) {
-        return Math.max(0, Mth.lerp(partialTicks, this.healthRechargeTimer, this.healthRechargeTimer-1) / HEALTH_RECHARGE_TIME);
+        return Math.max(0, Mth.lerp(partialTicks, this.healthRechargeTimer, this.healthRechargeTimer - 1) / HEALTH_RECHARGE_TIME);
     }
 
     public boolean isRecharging() {
@@ -351,7 +360,7 @@ public class TargetDummyEntity extends Mob {
         // same as player
         if (attacker.canDisableShield()) {
             this.disableShield();
-        }else{
+        } else {
             this.playSound(SoundEvents.SHIELD_BLOCK, 1.0F, 0.8F + this.level().random.nextFloat() * 0.4F);
         }
     }
@@ -368,7 +377,7 @@ public class TargetDummyEntity extends Mob {
         if (id == 30) {
             this.shieldCooldown = SHIELD_COOLDOWN;
         }
-        if(id == 32){
+        if (id == 32) {
             this.healthRechargeTimer = HEALTH_RECHARGE_TIME;
         }
         super.handleEntityEvent(id);
@@ -443,7 +452,7 @@ public class TargetDummyEntity extends Mob {
             if (!hasInfiniteHealth()) {
                 doSetHealth(newHealth);
 
-                if(newHealth<=0){
+                if (newHealth <= 0) {
                     setRecharging();
                 }
             }
@@ -611,7 +620,7 @@ public class TargetDummyEntity extends Mob {
         if (healthRechargeTimer != 0) {
             healthRechargeTimer--;
             this.doSetHealth(health + this.getMaxHealth() / HEALTH_RECHARGE_TIME);
-            if(healthRechargeTimer == 0){
+            if (healthRechargeTimer == 0) {
                 playersTracker.clear();
                 this.totalHealingTakenInCombat = 0;
                 this.totalDamageTakenInCombat = 0;
@@ -827,6 +836,9 @@ public class TargetDummyEntity extends Mob {
 
         public void showHealthBar(boolean on) {
             healthBar.setVisible(on);
+            if (!on) {
+                healthBar.removeAllPlayers();
+            }
         }
 
         public void updateHealth() {
@@ -840,7 +852,7 @@ public class TargetDummyEntity extends Mob {
 
         public void unTrack(ServerPlayer serverPlayer) {
             currentlyAttacking.remove(serverPlayer);
-            if(!TargetDummyEntity.this.isRecharging()) healthBar.removePlayer(serverPlayer);
+            if (!TargetDummyEntity.this.isRecharging()) healthBar.removePlayer(serverPlayer);
         }
 
         public void update(float combatDuration, float totalDamageTakenInCombat, float totalHealingTakenInCombat) {

@@ -25,7 +25,6 @@ public class TargetDummyModel<T extends TargetDummyEntity> extends HumanoidModel
         standPlate = modelPart.getChild("stand");
     }
 
-    //TODO: maybe add back -1 y offset
     public static LayerDefinition createMesh(float size, int textHeight) {
         CubeDeformation deformation = new CubeDeformation(size);
         MeshDefinition meshdefinition = HumanoidModel.createMesh(deformation, 0.0F);

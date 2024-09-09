@@ -306,11 +306,10 @@ public class TargetDummyEntity extends Mob {
 
     private void setRecharging() {
         this.healthRechargeTimer = HEALTH_RECHARGE_TIME;
-        this.totalHealingTakenInCombat = 0;
-        this.totalDamageTakenInCombat = 0;
         CombatTracker tracker = this.getCombatTracker();
-        tracker.inCombat = false;
+        //tracker.inCombat = false;
         tracker.entries.clear();
+        playersTracker.finishFight();
         this.level().broadcastEntityEvent(this, (byte) 32);
     }
 
@@ -331,7 +330,6 @@ public class TargetDummyEntity extends Mob {
     public ItemStack getPickResult() {
         ItemStack itemStack = new ItemStack(Dummmmmmy.DUMMY_ITEM.get());
         if (this.hasCustomName()) {
-            //TODO: check if its needed
             itemStack.set(DataComponents.CUSTOM_NAME, this.getCustomName());
         }
         return itemStack;
@@ -363,12 +361,6 @@ public class TargetDummyEntity extends Mob {
         this.shieldCooldown = SHIELD_COOLDOWN;
         this.playSound(SoundEvents.SHIELD_BREAK, 0.8F, 0.8F + this.level().random.nextFloat() * 0.4F);
         this.level().broadcastEntityEvent(this, (byte) 30);
-    }
-
-    @Override
-    protected void blockedByShield(LivingEntity defender) {
-        super.blockedByShield(defender);
-        // shield sound just plays on client side for receiving player for some reason
     }
 
     @Override
@@ -449,15 +441,19 @@ public class TargetDummyEntity extends Mob {
             }
             this.lastTickActuallyDamaged = this.tickCount;
             if (!hasInfiniteHealth()) {
-                super.setHealth(newHealth);
-                this.lastHealth = getHealth();
-                playersTracker.updateHealth();
+                doSetHealth(newHealth);
 
                 if(newHealth<=0){
                     setRecharging();
                 }
             }
         }
+    }
+
+    private void doSetHealth(float newHealth) {
+        super.setHealth(newHealth);
+        this.lastHealth = getHealth();
+        this.playersTracker.updateHealth();
     }
 
     private @Nullable DamageSource getActualDamageSource(float damage) {
@@ -614,7 +610,12 @@ public class TargetDummyEntity extends Mob {
 
         if (healthRechargeTimer != 0) {
             healthRechargeTimer--;
-            this.setHealth(health + this.getMaxHealth() / HEALTH_RECHARGE_TIME);
+            this.doSetHealth(health + this.getMaxHealth() / HEALTH_RECHARGE_TIME);
+            if(healthRechargeTimer == 0){
+                playersTracker.clear();
+                this.totalHealingTakenInCombat = 0;
+                this.totalDamageTakenInCombat = 0;
+            }
         }
 
         this.setNoGravity(true);
@@ -792,13 +793,10 @@ public class TargetDummyEntity extends Mob {
             //here is to visually show dps on a status message
             if (showMessage && player.distanceTo(this) < 64) {
                 Component message;
-                DecimalFormatSymbols symbols = new DecimalFormatSymbols();
-                symbols.setDecimalSeparator('.');
-                DecimalFormat decimalFormat = new DecimalFormat("#.##", symbols);
                 Component dpsMessage = Component.translatable("message.dummmmmmy.dps",
-                        decimalFormat.format(dps));
+                        Dummmmmmy.DF2.format(dps));
                 Component hpsMessage = Component.translatable("message.dummmmmmy.hps",
-                        decimalFormat.format(hps));
+                        Dummmmmmy.DF2.format(hps));
 
                 if (dps > 0 && hps > 0) {
                     message = Component.translatable("message.dummmmmmy.double",
@@ -842,7 +840,7 @@ public class TargetDummyEntity extends Mob {
 
         public void unTrack(ServerPlayer serverPlayer) {
             currentlyAttacking.remove(serverPlayer);
-            healthBar.removePlayer(serverPlayer);
+            if(!TargetDummyEntity.this.isRecharging()) healthBar.removePlayer(serverPlayer);
         }
 
         public void update(float combatDuration, float totalDamageTakenInCombat, float totalHealingTakenInCombat) {
@@ -856,16 +854,14 @@ public class TargetDummyEntity extends Mob {
                 ServerPlayer p = e.getKey();
                 int timer = e.getValue() - 1;
                 currentlyAttacking.replace(p, timer);
-                boolean outOfCompat = false;
+                boolean outOfCombat = false;
                 if (timer <= 0) {
                     removedPlayers.add(p);
-                    outOfCompat = true;
+                    outOfCombat = true;
                 }
-                showDpsMessageTo(p, combatDuration, dps, hps, outOfCompat);
+                showDpsMessageTo(p, combatDuration, dps, hps, outOfCombat);
             }
-            if (!TargetDummyEntity.this.isRecharging()) {
-                removedPlayers.forEach(this::unTrack);
-            }
+            removedPlayers.forEach(this::unTrack);
         }
 
 
@@ -882,6 +878,9 @@ public class TargetDummyEntity extends Mob {
             healthBar.removeAllPlayers();
         }
 
+        public void finishFight() {
+            currentlyAttacking.replaceAll((p, i) -> 0);
+        }
     }
 
 }

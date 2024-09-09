@@ -65,7 +65,7 @@ public class CommonConfigs {
                         .define("xp_per_damage_on_hit", 0, 0d, 100);
 
         BOSS_HEALTH = builder.comment("How much health the dummy should have when in boss mode (when given a banner)")
-                .define("boss_health", 100, 1, 1000000);
+                .define("boss_health", 200, 1, 1000000);
         builder.pop();
 
         builder.push("mobs_damage_numbers");

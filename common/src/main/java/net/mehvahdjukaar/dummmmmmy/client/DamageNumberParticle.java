@@ -3,7 +3,7 @@ package net.mehvahdjukaar.dummmmmmy.client;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.math.Axis;
+import net.mehvahdjukaar.dummmmmmy.Dummmmmmy;
 import net.mehvahdjukaar.dummmmmmy.configs.ClientConfigs;
 import net.mehvahdjukaar.dummmmmmy.configs.CritMode;
 import net.minecraft.client.Camera;
@@ -15,17 +15,14 @@ import net.minecraft.client.particle.ParticleProvider;
 import net.minecraft.client.particle.ParticleRenderType;
 import net.minecraft.client.particle.SpriteSet;
 import net.minecraft.client.renderer.LightTexture;
-import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FastColor;
 import net.minecraft.util.Mth;
-import net.minecraft.world.item.ItemDisplayContext;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.Vec3;
-import org.joml.Quaternionf;
 
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -33,8 +30,6 @@ import java.util.List;
 public class DamageNumberParticle extends Particle {
 
     private static final List<Float> POSITIONS = new ArrayList<>(Arrays.asList(0f, -0.25f, 0.12f, -0.12f, 0.25f));
-    private static final DecimalFormat DF2 = new DecimalFormat("#.##");
-    private static final DecimalFormat DF1 = new DecimalFormat("#.#");
 
     private final Font fontRenderer = Minecraft.getInstance().font;
 
@@ -66,9 +61,10 @@ public class DamageNumberParticle extends Particle {
         int index = CritMode.extractIntegerPart(dz);
         float critMult = CritMode.extractFloatPart(dz);
         if (critMult == 0) {
-            this.text = Component.literal((amount < 0 ? "+" : "") + DF2.format(number));
+            this.text = Component.literal((amount < 0 ? "+" : "") + Dummmmmmy.DF2.format(number));
         } else {
-            this.text = Component.translatable("message.dummmmmmy.crit", DF1.format(number), DF1.format(critMult));
+            this.text = Component.translatable("message.dummmmmmy.crit",
+                    Dummmmmmy.DF1.format(number), Dummmmmmy.DF1.format(critMult));
         }
 
         this.xd = POSITIONS.get((index % POSITIONS.size()));

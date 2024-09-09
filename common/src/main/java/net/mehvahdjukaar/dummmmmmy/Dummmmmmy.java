@@ -31,6 +31,8 @@ import net.minecraft.world.level.block.DispenserBlock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.function.Supplier;
 
 /**
@@ -131,4 +133,14 @@ public class Dummmmmmy {
     public static final DynamicHolder<DamageType> CRITICAL_DAMAGE =
             DynamicHolder.of(res("critical"), Registries.DAMAGE_TYPE);
 
+
+    static {
+        DecimalFormatSymbols symbols = new DecimalFormatSymbols();
+        symbols.setDecimalSeparator('.');
+        DF1 = new DecimalFormat("#.##", symbols);
+        DF2 = new DecimalFormat("#.#", symbols);
+    }
+
+    public static final DecimalFormat DF2;
+    public static final DecimalFormat DF1;
 }

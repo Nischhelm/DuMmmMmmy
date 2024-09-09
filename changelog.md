@@ -1,4 +1,3 @@
-- updated to 1.21
-- dummies can now equip shields
-- many improvements and optimizations to mod internals
-- added new tags for items which determine the dummy mob type
+- added boss mode. give a dummy a banner to have to have a boss bar
+- dummy can now show healing per second as well as DPS
+- many internal improvements

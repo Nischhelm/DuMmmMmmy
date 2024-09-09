@@ -61,7 +61,7 @@ subprojects {
 
     if (env.MODRINTH_TOKEN) {
         modrinth {
-            projectId = "dummmmmmy"
+            projectId = "mmmmmmmmmmmm"
             uploadFile = tasks.remapJar
             gameVersions = versions
             if (modLoader == "forge") {

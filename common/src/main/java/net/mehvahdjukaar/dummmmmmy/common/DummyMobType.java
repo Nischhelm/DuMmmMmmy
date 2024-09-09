@@ -21,20 +21,17 @@ public enum DummyMobType {
     UNDEFINED,
     UNDEAD,
     AQUATIC,
-    ILLAGER,
     ARTHROPOD,
     NETHER_MOB,
     SCARECROW,
     DECOY;
 
-    public static DummyMobType get(ItemStack headStack, Level level) {
+    public static DummyMobType get(ItemStack headStack) {
         if (headStack.is(Dummmmmmy.UNDEAD_HEADS)) return UNDEAD;
         else if (headStack.is(Dummmmmmy.AQUATIC_MOB_HEADS)) return AQUATIC;
         else if (headStack.is(Dummmmmmy.ARTHROPOD_HEADS)) return ARTHROPOD;
         else if (headStack.is(Items.PLAYER_HEAD)) return DECOY;
         else if (headStack.is(Dummmmmmy.NETHER_MOB_HEADS)) return NETHER_MOB;
-        else if (ItemStack.matches(headStack, Raid.getLeaderBannerInstance(level.registryAccess()
-                .registryOrThrow(Registries.BANNER_PATTERN).asLookup()))) return ILLAGER;
         else if (isPumpkin(headStack.getItem())) return SCARECROW;
         else return UNDEFINED;
     }

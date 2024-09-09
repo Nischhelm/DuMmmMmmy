@@ -17,12 +17,14 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerBossEvent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.tags.EntityTypeTags;
 import net.minecraft.util.Mth;
+import net.minecraft.world.BossEvent;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.CombatEntry;
@@ -55,6 +57,7 @@ public class TargetDummyEntity extends Mob {
     private static final int SHIELD_COOLDOWN = 100;
 
     private static final EntityDataAccessor<Boolean> SHEARED = SynchedEntityData.defineId(TargetDummyEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> IS_BOSS = SynchedEntityData.defineId(TargetDummyEntity.class, EntityDataSerializers.BOOLEAN);
 
     // used to calculate the whole damage in one tick, in case there are multiple sources
     private int lastTickActuallyDamaged;
@@ -64,9 +67,9 @@ public class TargetDummyEntity extends Mob {
     private final List<CritRecord> critRecordsThisTick = new ArrayList<>();
     private DummyMobType mobType = DummyMobType.UNDEFINED;
 
-    private final Map<ServerPlayer, Integer> currentlyAttacking = new HashMap<>();
     private DamageSource currentDamageSource = null;
     private boolean unbreakable = false;
+    private final PlayersTracker playersTracker = new PlayersTracker();
 
     //client values
 
@@ -78,7 +81,7 @@ public class TargetDummyEntity extends Mob {
     // used to have an independent start for the animation, otherwise the phase of the animation depends ont he damage dealt
     private float shakeAmount = 0;
     private float prevShakeAmount = 0;
-    private int shieldCooldown;
+    private int shieldCooldown = 0;
 
 
     public TargetDummyEntity(EntityType<TargetDummyEntity> type, Level world) {
@@ -108,6 +111,15 @@ public class TargetDummyEntity extends Mob {
         this.entityData.set(SHEARED, sheared);
     }
 
+    public boolean isBoss() {
+        return this.entityData.get(IS_BOSS);
+    }
+
+    public void setBoss(boolean boss) {
+        this.entityData.set(IS_BOSS, boss);
+        this.playersTracker.showHealthBar(boss);
+    }
+
     public boolean canScare() {
         return this.mobType == DummyMobType.SCARECROW;
     }
@@ -120,7 +132,7 @@ public class TargetDummyEntity extends Mob {
     public void setItemSlot(EquipmentSlot slot, ItemStack stack) {
         super.setItemSlot(slot, stack);
         if (slot == EquipmentSlot.HEAD) {
-            this.mobType = DummyMobType.get(stack, level());
+            this.mobType = DummyMobType.get(stack);
         }
     }
 
@@ -128,6 +140,7 @@ public class TargetDummyEntity extends Mob {
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
         builder.define(SHEARED, false);
+        builder.define(IS_BOSS, false);
     }
 
     @Override
@@ -144,7 +157,8 @@ public class TargetDummyEntity extends Mob {
         if (tag.contains("Unbreakable")) {
             this.unbreakable = tag.getBoolean("Unbreakable");
         }
-        this.mobType = DummyMobType.get(this.getItemBySlot(EquipmentSlot.HEAD), level());
+        this.mobType = DummyMobType.get(this.getItemBySlot(EquipmentSlot.HEAD));
+        this.setBoss(this.getItemBySlot(EquipmentSlot.OFFHAND).getItem() instanceof BannerItem);
     }
 
     // dress it up! :D
@@ -158,8 +172,7 @@ public class TargetDummyEntity extends Mob {
             Item item = itemstack.getItem();
 
             //special items
-            if (item instanceof BannerItem ||
-                    DummyMobType.get(itemstack, level()) != DummyMobType.UNDEFINED ||
+            if (DummyMobType.get(itemstack) != DummyMobType.UNDEFINED ||
                     ForgeHelper.canEquipItem(this, itemstack, EquipmentSlot.HEAD)) {
                 equipmentSlot = EquipmentSlot.HEAD;
             }
@@ -168,6 +181,11 @@ public class TargetDummyEntity extends Mob {
             Level level = player.level();
             if (itemstack.isEmpty() && hand == InteractionHand.MAIN_HAND) {
                 equipmentSlot = this.getClickedSlot(vec);
+                if (equipmentSlot == null) {
+                    if (hasItemInSlot(EquipmentSlot.MAINHAND)) {
+                        equipmentSlot = EquipmentSlot.MAINHAND;
+                    } else equipmentSlot = EquipmentSlot.OFFHAND;
+                }
                 if (this.hasItemInSlot(equipmentSlot)) {
                     if (level.isClientSide) return InteractionResult.CONSUME;
                     this.swapItem(player, equipmentSlot, ItemStack.EMPTY, hand);
@@ -181,7 +199,7 @@ public class TargetDummyEntity extends Mob {
                 this.swapItem(player, equipmentSlot, itemstack, hand);
                 success = true;
 
-            } else if (equipmentSlot.getType() == EquipmentSlot.Type.HAND && itemstack.getItem() instanceof ShieldItem) {
+            } else if (itemstack.getItem() instanceof ShieldItem) {
                 this.playSound(SoundEvents.ARMOR_EQUIP_GENERIC.value(), 1.0F, 1.0F);
                 if (level.isClientSide) return InteractionResult.CONSUME;
                 this.swapItem(player, EquipmentSlot.MAINHAND, itemstack, hand);
@@ -196,6 +214,12 @@ public class TargetDummyEntity extends Mob {
                     this.setSheared(true);
                     return InteractionResult.SUCCESS;
                 }
+            } else if (item instanceof BannerItem) {
+                this.playSound(SoundEvents.ARMOR_EQUIP_GENERIC.value(), 1.0F, 1.0F);
+                if (level.isClientSide) return InteractionResult.CONSUME;
+                this.swapItem(player, EquipmentSlot.OFFHAND, itemstack, hand);
+                this.setBoss(true);
+                return InteractionResult.SUCCESS;
             }
 
             if (success) return InteractionResult.SUCCESS;
@@ -210,8 +234,9 @@ public class TargetDummyEntity extends Mob {
         this.setItemSlotAndDropWhenKilled(slot, armor);
     }
 
+    @Nullable
     private EquipmentSlot getClickedSlot(Vec3 vec3) {
-        EquipmentSlot equipmentSlot = EquipmentSlot.MAINHAND;
+        EquipmentSlot equipmentSlot = null;
         double d0 = vec3.y;
         EquipmentSlot slot = EquipmentSlot.FEET;
         if (d0 >= 0.1D && d0 < 0.1D + (0.45D) && this.hasItemInSlot(slot)) {
@@ -268,6 +293,10 @@ public class TargetDummyEntity extends Mob {
             this.remove(RemovalReason.KILLED);
             this.gameEvent(GameEvent.ENTITY_DIE);
         }
+    }
+
+    protected boolean hasInfiniteHealth() {
+        return this.isBoss() && !playersTracker.isEmpty();
     }
 
     @Override
@@ -336,7 +365,7 @@ public class TargetDummyEntity extends Mob {
         // dismantling + adding players to dps message list
         if (source.getEntity() instanceof Player player) {
             if (player instanceof ServerPlayer sp) {
-                currentlyAttacking.put(sp, CommonConfigs.MAX_COMBAT_INTERVAL.get());
+                playersTracker.track(sp);
             }
             // shift-left-click with empty hand dismantles
             if (player.isShiftKeyDown() && player.getMainHandItem().isEmpty() && !this.unbreakable && player.getAbilities().mayBuild) {
@@ -370,7 +399,6 @@ public class TargetDummyEntity extends Mob {
         if (newHealth == this.getMaxHealth()) {
             super.setHealth(newHealth);
         } else {
-            // should not happen
             Level level = this.level();
 
             if (level.isClientSide) return;
@@ -397,6 +425,11 @@ public class TargetDummyEntity extends Mob {
                 }
 
                 this.lastTickActuallyDamaged = this.tickCount;
+
+                if (hasInfiniteHealth()) {
+                    super.setHealth(newHealth);
+                    playersTracker.updateHealth();
+                }
             }
         }
     }
@@ -436,7 +469,7 @@ public class TargetDummyEntity extends Mob {
                 new ClientBoundUpdateAnimationMessage(this.getId(), this.animationPosition));
 
         if (source != null) {
-            if (!currentlyAttacking.isEmpty()) {
+            if (!playersTracker.isEmpty()) {
                 CritRecord critRec = null;
                 for (int j = critRecordsThisTick.size() - 1; j >= 0; j--) {
                     var c = critRecordsThisTick.get(j);
@@ -446,7 +479,7 @@ public class TargetDummyEntity extends Mob {
                     }
                 }
 
-                for (var p : this.currentlyAttacking.keySet()) {
+                for (var p : this.playersTracker.getPlayers()) {
                     NetworkHelper.sendToClientPlayer(p,
                             new ClientBoundDamageNumberMessage(this.getId(), damage, source, critRec));
                 }
@@ -486,6 +519,7 @@ public class TargetDummyEntity extends Mob {
         super.aiStep();
     }
 
+
     @Override
     public void tick() {
 
@@ -499,7 +533,7 @@ public class TargetDummyEntity extends Mob {
         if (lastTickActuallyDamaged + 1 == this.tickCount && !level.isClientSide) {
             float trueDamage = this.getMaxHealth() - this.getHealth();
             if (trueDamage > 0) {
-                this.heal(trueDamage);
+                if (!hasInfiniteHealth()) this.heal(trueDamage);
                 onActuallyDamagedOrTrueDamageDetected(trueDamage, null);
             }
         }
@@ -552,39 +586,11 @@ public class TargetDummyEntity extends Mob {
         //am i being attacked?
         tracker.recheckStatus();
         if (tracker.inCombat && this.totalDamageTakenInCombat > 0) {
-
             float combatDuration = tracker.getCombatDuration();
-            CommonConfigs.DpsMode dpsMode = CommonConfigs.DYNAMIC_DPS.get();
-            if (dpsMode != CommonConfigs.DpsMode.OFF && combatDuration > 0) {
+            this.playersTracker.update(combatDuration, this.totalDamageTakenInCombat);
 
-                boolean dynamic = dpsMode == CommonConfigs.DpsMode.DYNAMIC;
-                float seconds = combatDuration / 20f + 1;
-                float dps = totalDamageTakenInCombat / seconds;
-                List<ServerPlayer> outOfCombat = new ArrayList<>();
-
-                for (var e : this.currentlyAttacking.entrySet()) {
-                    ServerPlayer p = e.getKey();
-                    int timer = e.getValue() - 1;
-                    this.currentlyAttacking.replace(p, timer);
-
-                    boolean showMessage = dynamic && this.lastTickActuallyDamaged + 1 == this.tickCount;
-                    if (timer <= 0) {
-                        outOfCombat.add(p);
-                        if (!dynamic) showMessage = true;
-                    }
-                    //here is to visually show dps on a status message
-                    if (showMessage && p.distanceTo(this) < 64) {
-                        p.displayClientMessage(Component.translatable("message.dummmmmmy.dps",
-                                this.getDisplayName(),
-                                new DecimalFormat("#.##").format(dps)), true);
-
-                    }
-                }
-
-                outOfCombat.forEach(currentlyAttacking::remove);
-            }
         } else {
-            this.currentlyAttacking.clear();
+            this.playersTracker.clear();
             this.totalDamageTakenInCombat = 0;
         }
     }
@@ -691,6 +697,79 @@ public class TargetDummyEntity extends Mob {
 
     public int getNextNumberPos() {
         return damageNumberPos++;
+    }
+
+    private void showDpsMessageTo(ServerPlayer player, float combatDuration, float dps, boolean outOfCompat) {
+        CommonConfigs.DpsMode dpsMode = CommonConfigs.DYNAMIC_DPS.get();
+
+        if (dpsMode != CommonConfigs.DpsMode.OFF && combatDuration > 0) {
+            boolean showMessage;
+            if (dpsMode == CommonConfigs.DpsMode.DYNAMIC) {
+                showMessage = this.lastTickActuallyDamaged + 1 == this.tickCount;
+            } else showMessage = outOfCompat;
+
+            //here is to visually show dps on a status message
+            if (showMessage && player.distanceTo(this) < 64) {
+                player.displayClientMessage(Component.translatable("message.dummmmmmy.dps",
+                        this.getDisplayName(),
+                        new DecimalFormat("#.##").format(dps)), true);
+
+            }
+        }
+    }
+
+    private class PlayersTracker {
+
+        private final Map<ServerPlayer, Integer> currentlyAttacking = new HashMap<>();
+        private final ServerBossEvent healthBar = new ServerBossEvent(getDisplayName(), BossEvent.BossBarColor.YELLOW,
+                BossEvent.BossBarOverlay.NOTCHED_12);
+
+        public void showHealthBar(boolean on) {
+            healthBar.setVisible(on);
+        }
+
+        public void updateHealth() {
+            healthBar.setProgress(getHealth() / getMaxHealth());
+        }
+
+        public void track(ServerPlayer serverPlayer) {
+            currentlyAttacking.put(serverPlayer, CommonConfigs.MAX_COMBAT_INTERVAL.get());
+        }
+
+        public void update(float combatDuration, float totalDamageTakenInCombat) {
+            List<ServerPlayer> removedPlayers = new ArrayList<>();
+
+            float seconds = combatDuration / 20f + 1;
+            float dps = totalDamageTakenInCombat / seconds;
+
+            for (var e : currentlyAttacking.entrySet()) {
+                ServerPlayer p = e.getKey();
+                int timer = e.getValue() - 1;
+                currentlyAttacking.replace(p, timer);
+                boolean outOfCompat = false;
+                if (timer <= 0) {
+                    removedPlayers.add(p);
+                    outOfCompat = true;
+                }
+                showDpsMessageTo(p, combatDuration, dps, outOfCompat);
+            }
+            removedPlayers.forEach(currentlyAttacking::remove);
+            removedPlayers.forEach(healthBar::removePlayer);
+        }
+
+
+        public boolean isEmpty() {
+            return currentlyAttacking.isEmpty();
+        }
+
+        public Collection<ServerPlayer> getPlayers() {
+            return currentlyAttacking.keySet();
+        }
+
+        public void clear() {
+            currentlyAttacking.clear();
+        }
+
     }
 
 }

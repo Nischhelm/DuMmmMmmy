@@ -3,6 +3,8 @@ package net.mehvahdjukaar.dummmmmmy.client;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.mehvahdjukaar.dummmmmmy.common.TargetDummyEntity;
+import net.minecraft.client.model.geom.ModelLayers;
+import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.renderer.ItemInHandRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.RenderLayerParent;
@@ -16,7 +18,9 @@ public class LayerDummyShield extends ItemInHandLayer<TargetDummyEntity, TargetD
 
     private final ItemInHandRenderer itemInHandRenderer;
 
-    public LayerDummyShield(RenderLayerParent<TargetDummyEntity, TargetDummyModel<TargetDummyEntity>> renderer, ItemInHandRenderer itemInHandRenderer) {
+    public LayerDummyShield(RenderLayerParent<TargetDummyEntity, TargetDummyModel<TargetDummyEntity>> renderer,
+
+                            ItemInHandRenderer itemInHandRenderer) {
         super(renderer, itemInHandRenderer);
         this.itemInHandRenderer = itemInHandRenderer;
     }
@@ -32,11 +36,12 @@ public class LayerDummyShield extends ItemInHandLayer<TargetDummyEntity, TargetD
             int packedLight
     ) {
         if (!itemStack.isEmpty()) {
+            boolean left = arm == HumanoidArm.LEFT;
+            if(left)return;
 
             boolean isBlocking = livingEntity.isBlocking();
 
             poseStack.pushPose();
-            boolean left = arm == HumanoidArm.LEFT;
 
             this.getParentModel().translateToHand(arm, poseStack);
             poseStack.mulPose(Axis.XP.rotationDegrees(-90.0F));

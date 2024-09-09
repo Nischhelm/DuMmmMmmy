@@ -3,10 +3,8 @@ package net.mehvahdjukaar.dummmmmmy.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.math.Axis;
 import net.mehvahdjukaar.dummmmmmy.common.TargetDummyEntity;
 import net.mehvahdjukaar.dummmmmmy.configs.ClientConfigs;
-import net.mehvahdjukaar.moonlight.api.client.util.RotHlpr;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.PartPose;
@@ -18,8 +16,8 @@ import net.minecraft.world.phys.Vec3;
 public class TargetDummyModel<T extends TargetDummyEntity> extends HumanoidModel<T> {
     public final ModelPart standPlate;
 
-    private float r = 0;
-    private float r2 = 0;
+    private float bodyWobble = 0;
+    private float headSideWobble = 0;
 
     public TargetDummyModel(ModelPart modelPart) {
         super(modelPart);
@@ -91,20 +89,24 @@ public class TargetDummyModel<T extends TargetDummyEntity> extends HumanoidModel
         matrixStackIn.popPose();
     }
 
+    public ModelPart getBody() {
+        return this.leftLeg;
+    }
+
     //TODO: this is horrible
     @Override
     public void prepareMobModel(T entity, float limbSwing, float limbSwingAmount, float partialTick) {
         super.prepareMobModel(entity, limbSwing, limbSwingAmount, partialTick);
         float phase = entity.getShake(partialTick);
-        float swing = entity.getAnimationPosition(partialTick);
-        float shake = Math.min((float) (swing * ClientConfigs.ANIMATION_INTENSITY.get()), 40f);
+        float unscaledSwingAmount = entity.getAnimationPosition(partialTick);
+        float swingAmount = Math.min((float) (unscaledSwingAmount * ClientConfigs.ANIMATION_INTENSITY.get()), 40f);
 
-        if (shake > 0) {
-            this.r = (float) -(Mth.sin(phase) * Math.PI / 100f * shake);
-            this.r2 = (float) (Mth.sin(phase) * Math.PI / 20f * Math.min(shake, 1));
+        if (swingAmount > 0) {
+            this.bodyWobble = (float) -(Mth.sin(phase) * Math.PI / 100f * swingAmount);
+            this.headSideWobble = (float) (Mth.sin(phase) * Math.PI / 20 * Math.min(swingAmount, 1));
         } else {
-            this.r = 0;
-            this.r2 = 0;
+            this.bodyWobble = 0;
+            this.headSideWobble = 0;
         }
 
        // un-rotate the stand plate, so it's aligned to the block grid
@@ -124,7 +126,7 @@ public class TargetDummyModel<T extends TargetDummyEntity> extends HumanoidModel
 
         float yOffsetIn = -1;
 
-        float xangle = r / 2;
+        float xangle = bodyWobble / 2;
 
 
         this.leftLeg.setPos(0, 12.0F + yOffsetIn, 0.0F);
@@ -150,16 +152,16 @@ public class TargetDummyModel<T extends TargetDummyEntity> extends HumanoidModel
         this.hat.copyFrom(this.head);
 
 
-        this.head.xRot = -r; //-r
-        this.head.zRot = r2; //r2
+        this.head.xRot = -bodyWobble; //-r
+        this.head.zRot = headSideWobble; //r2
 
 
         //rotate arms up
         this.rightArm.zRot = (float) Math.PI / 2f;
         this.leftArm.zRot = -(float) Math.PI / 2f;
         //swing arm
-        this.rightArm.xRot = r * n;
-        this.leftArm.xRot = r * n;
+        this.rightArm.xRot = bodyWobble * n;
+        this.leftArm.xRot = bodyWobble * n;
     }
 
 }

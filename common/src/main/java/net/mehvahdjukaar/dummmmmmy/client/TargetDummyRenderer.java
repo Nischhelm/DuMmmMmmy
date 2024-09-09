@@ -9,6 +9,7 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.debug.DebugRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.HumanoidMobRenderer;
+import net.minecraft.client.renderer.entity.layers.CapeLayer;
 import net.minecraft.client.renderer.entity.layers.FoxHeldItemLayer;
 import net.minecraft.client.renderer.entity.layers.ItemInHandLayer;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
@@ -24,6 +25,7 @@ public class TargetDummyRenderer extends HumanoidMobRenderer<TargetDummyEntity, 
                 context.getModelManager()));
         this.layers.removeIf(layer -> layer instanceof ItemInHandLayer<TargetDummyEntity, TargetDummyModel<TargetDummyEntity>>);
         this.addLayer(new LayerDummyShield(this, context.getItemInHandRenderer()));
+        this.addLayer(new LayerDummyCape(this,context,  context.getItemRenderer()));
     }
 
     @Override

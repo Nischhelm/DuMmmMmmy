@@ -4,6 +4,7 @@ import net.mehvahdjukaar.dummmmmmy.Dummmmmmy;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigBuilder;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigSpec;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigType;
+import net.minecraft.world.BossEvent;
 
 import java.util.Collections;
 import java.util.List;
@@ -27,6 +28,8 @@ public class CommonConfigs {
     public static final Supplier<Mode> DAMAGE_NUMBERS_MODE;
     public static final Supplier<Mode> HEALING_NUMBERS_MODE;
     public static final Supplier<Double> DROP_XP;
+    public static final Supplier<Integer> BOSS_HEALTH;
+    public static final Supplier<BossEvent.BossBarColor> BOSS_HEALTH_COLOR;
 
     public enum Mode {
         ALL_ENTITIES, ALL_PLAYERS, LOCAL_PLAYER, NONE;
@@ -62,6 +65,12 @@ public class CommonConfigs {
 
         DROP_XP = builder.comment("Makes dummy drop xp when hit. Training yay! Depends on damage done")
                         .define("xp_per_damage_on_hit", 0, 0d, 100);
+
+        BOSS_HEALTH_COLOR = builder.comment("Color of the boss health bar")
+                .define("boss_health_color", BossEvent.BossBarColor.YELLOW);
+
+        BOSS_HEALTH = builder.comment("Health of the dummy when in boss moe (wearing a banner)")
+                .define("boss_health", 200, 1, 1000);
         builder.pop();
 
         builder.push("mobs_damage_numbers");

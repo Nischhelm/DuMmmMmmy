@@ -3,7 +3,6 @@ package net.mehvahdjukaar.dummmmmmy.configs;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import net.mehvahdjukaar.dummmmmmy.Dummmmmmy;
-import net.mehvahdjukaar.moonlight.api.client.util.ColorUtil;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigBuilder;
 import net.mehvahdjukaar.moonlight.api.platform.configs.ConfigSpec;
@@ -39,6 +38,7 @@ public class ClientConfigs {
     public static final Supplier<Boolean> DAMAGE_NUMBERS;
     public static final Supplier<Boolean> LIT_UP_PARTICLES;
     public static final Supplier<CritMode> CRIT_MODE;
+    public static final Supplier<Boolean> HAY_PARTICLES;
 
     public static final Supplier<Map<IdOrTagPredicate, Integer>> DAMAGE_TO_COLORS;
 
@@ -56,6 +56,7 @@ public class ClientConfigs {
     private static final int COLOR_CACTUS = 0x0FA209;
     private static final int COLOR_TRUE = 0x910038;
     private static final int COLOR_WARDEN = 0x074550;
+    private static final int COLOR_WIND = 0xBEF3FF;
     private static final int COLOR_BLEED = 0x810A0A;
 
 
@@ -76,7 +77,8 @@ public class ClientConfigs {
                 .define("full_bright_damage_numbers", true);
         CRIT_MODE = PlatHelper.getPlatform().isForge() ? builder.comment("How crits should be shown")
                 .define("crit_mode", CritMode.COLOR_AND_MULTIPLIER) : () -> CritMode.OFF;
-
+        HAY_PARTICLES = builder.comment("Show hay particles when dealing damage")
+                .define("hay_particles", true);
         SKIN = builder.comment("Skin used by the dummy").define("texture", SkinType.DEFAULT);
 
 
@@ -87,6 +89,7 @@ public class ClientConfigs {
         map.put(new IdPredicate("trident"), COLOR_TRIDENT);
         map.put(new IdPredicate("dragon_breath"), COLOR_DRAGON);
         map.put(new IdPredicate("sonic_boom"), COLOR_WARDEN);
+        map.put(new IdPredicate("wind_charge"), COLOR_WIND);
         map.put(new IdPredicate("attributeslib:bleeding"), COLOR_BLEED);
         map.put(new TagPredicate(IS_EXPLOSION), COLOR_EXPLOSION);
         map.put(new TagPredicate(IS_COLD), COLOR_FREEZING);
@@ -129,15 +132,15 @@ public class ClientConfigs {
     public enum SkinType {
         DEFAULT("dummy", "dummy_h"),
         ORIGINAL("dummy_1", "dummy_1"),
-        DUNGEONS("dummy_3", "dummy_3_h"),
-        ALTERNATIVE("dummy_2", "dummy_2_h");
+        ALTERNATIVE("dummy_3", "dummy_3_h"),
+        DUNGEONS("dummy_2", "dummy_2_h");
 
         private final ResourceLocation texture;
         private final ResourceLocation shearedTexture;
 
         SkinType(String name, String shearedName) {
-            texture = new ResourceLocation(Dummmmmmy.MOD_ID + ":textures/entity/" + name + ".png");
-            shearedTexture = new ResourceLocation(Dummmmmmy.MOD_ID + ":textures/entity/" + shearedName + ".png");
+            texture = Dummmmmmy.res("textures/entity/" + name + ".png");
+            shearedTexture = Dummmmmmy.res("textures/entity/" + shearedName + ".png");
         }
 
         public ResourceLocation getSkin(Boolean sheared) {

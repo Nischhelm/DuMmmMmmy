@@ -27,6 +27,8 @@ import net.minecraft.world.level.block.DispenserBlock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.function.Supplier;
 
 /**
@@ -81,9 +83,9 @@ public class Dummmmmmy {
             BlockPos pos = dispenser.getPos().relative(direction);
 
             TargetDummyEntity dummy = new TargetDummyEntity(world);
-            float f = direction.toYRot();
-            dummy.moveTo(pos.getX() + 0.5D, pos.getY(), pos.getZ() + 0.5D, f, 0.0F);
-
+            float rot = direction.toYRot();
+            dummy.moveTo(pos.getX() + 0.5D, pos.getY(), pos.getZ() + 0.5D, rot, 0.0F);
+            dummy.setYHeadRot(rot);
             world.addFreshEntity(dummy);
             itemStack.shrink(1);
             world.levelEvent(1000, dispenser.getPos(), 0);
@@ -105,6 +107,7 @@ public class Dummmmmmy {
             res(TARGET_DUMMY_NAME), () -> new TargetDummyItem(new Item.Properties().stacksTo(16)));
 
     public static final Supplier<SimpleParticleType> NUMBER_PARTICLE = RegHelper.registerParticle(res("number"));
+    public static final Supplier<SimpleParticleType> HAY_PARTICLE = RegHelper.registerParticle(res("hay"));
 
 
     public static final TagKey<DamageType> IS_THORN = TagKey.create(Registries.DAMAGE_TYPE, res("is_thorn"));
@@ -117,4 +120,13 @@ public class Dummmmmmy {
     public static final ResourceLocation TRUE_DAMAGE = Dummmmmmy.res("true");
     public static final ResourceLocation CRITICAL_DAMAGE = Dummmmmmy.res("critical");
 
+    static {
+        DecimalFormatSymbols symbols = new DecimalFormatSymbols();
+        symbols.setDecimalSeparator('.');
+        DF1 = new DecimalFormat("#.##", symbols);
+        DF2 = new DecimalFormat("#.#", symbols);
+    }
+
+    public static final DecimalFormat DF2;
+    public static final DecimalFormat DF1;
 }

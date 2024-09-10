@@ -3,10 +3,8 @@ package net.mehvahdjukaar.dummmmmmy.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.math.Axis;
 import net.mehvahdjukaar.dummmmmmy.common.TargetDummyEntity;
 import net.mehvahdjukaar.dummmmmmy.configs.ClientConfigs;
-import net.mehvahdjukaar.moonlight.api.client.util.RotHlpr;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.PartPose;
@@ -18,22 +16,22 @@ import net.minecraft.world.phys.Vec3;
 public class TargetDummyModel<T extends TargetDummyEntity> extends HumanoidModel<T> {
     public final ModelPart standPlate;
 
-    private float r = 0;
-    private float r2 = 0;
+    private float bodyWobble = 0;
+    private float headSideWobble = 0;
+    private float rechargingAnim = 0;
 
     public TargetDummyModel(ModelPart modelPart) {
         super(modelPart);
         standPlate = modelPart.getChild("stand");
     }
 
-    //TODO: maybe add back -1 y offset
     public static LayerDefinition createMesh(float size, int textHeight) {
         CubeDeformation deformation = new CubeDeformation(size);
         MeshDefinition meshdefinition = HumanoidModel.createMesh(deformation, 0.0F);
         PartDefinition partdefinition = meshdefinition.getRoot();
         partdefinition.addOrReplaceChild("stand", CubeListBuilder.create()
                         .texOffs(0, 32)
-                        .addBox(-7.0F, 12F, -7.0F, 14F, 1F, 14F, deformation),
+                        .addBox(-6.0F, 12F, -6.0F, 12F, 1F, 12F, deformation),
                 PartPose.offset(0.0F, 11.0F, 0.0F));
 
         partdefinition.addOrReplaceChild("right_arm", CubeListBuilder.create()
@@ -55,9 +53,9 @@ public class TargetDummyModel<T extends TargetDummyEntity> extends HumanoidModel
     }
 
     //don't touch. it just works
-    public void rotateModelX(ModelPart model, float nrx, float nry, float nrz, float angle) {
+    public void rotateModelX(ModelPart model, float pivotX, float pivotY, float pivotZ, float angle) {
         Vec3 oldRot = new Vec3(model.x, model.y, model.z);
-        Vec3 actualRot = new Vec3(nrx, nry, nrz);
+        Vec3 actualRot = new Vec3(pivotX, pivotY, pivotZ);
 
         Vec3 newRot = actualRot.add(oldRot.subtract(actualRot).xRot(-angle));
 
@@ -65,9 +63,9 @@ public class TargetDummyModel<T extends TargetDummyEntity> extends HumanoidModel
         model.xRot = angle;
     }
 
-    public void rotateModelY(ModelPart model, float nrx, float nry, float nrz, float angle, int mult) {
+    public void rotateModelY(ModelPart model, float pivotX, float pivotY, float pivotZ, float angle, int mult) {
         Vec3 oldRot = new Vec3(model.x, model.y, model.z);
-        Vec3 actualRot = new Vec3(nrx, nry, nrz);
+        Vec3 actualRot = new Vec3(pivotX, pivotY, pivotZ);
 
         Vec3 newRot = actualRot.add(oldRot.subtract(actualRot).xRot(-angle));
 
@@ -76,20 +74,23 @@ public class TargetDummyModel<T extends TargetDummyEntity> extends HumanoidModel
     }
 
     @Override
-    public void renderToBuffer(PoseStack matrixStackIn, VertexConsumer bufferIn, int packedLightIn, int overlayIn, float red, float green,
-                               float blue, float alpha) {
+    public void renderToBuffer(PoseStack matrixStackIn, VertexConsumer bufferIn, int packedLightIn, int overlayIn, float r, float g, float b, float a) {
         int overlay = OverlayTexture.NO_OVERLAY;
         matrixStackIn.pushPose();
-        this.standPlate.render(matrixStackIn, bufferIn, packedLightIn, overlay, red, green, blue, alpha);
+        this.standPlate.render(matrixStackIn, bufferIn, packedLightIn, overlay, r, g, b, a);
 
-        this.head.render(matrixStackIn, bufferIn, packedLightIn, overlay, red, green, blue, alpha);
-        this.rightArm.render(matrixStackIn, bufferIn, packedLightIn, overlay, red, green, blue, alpha);
-        this.leftArm.render(matrixStackIn, bufferIn, packedLightIn, overlay, red, green, blue, alpha);
-        this.body.render(matrixStackIn, bufferIn, packedLightIn, overlay, red, green, blue, alpha);
-        this.leftLeg.render(matrixStackIn, bufferIn, packedLightIn, overlay, red, green, blue, alpha);
+        this.head.render(matrixStackIn, bufferIn, packedLightIn, overlay, r, g, b, a);
+        this.rightArm.render(matrixStackIn, bufferIn, packedLightIn, overlay, r, g, b, a);
+        this.leftArm.render(matrixStackIn, bufferIn, packedLightIn, overlay, r, g, b, a);
+        this.body.render(matrixStackIn, bufferIn, packedLightIn, overlay, r, g, b, a);
+        this.leftLeg.render(matrixStackIn, bufferIn, packedLightIn, overlay, r, g, b, a);
 
-        this.hat.render(matrixStackIn, bufferIn, packedLightIn, overlay, red, green, blue, alpha);
+        this.hat.render(matrixStackIn, bufferIn, packedLightIn, overlay, r, g, b, a);
         matrixStackIn.popPose();
+    }
+
+    public ModelPart getBody() {
+        return this.leftLeg;
     }
 
     //TODO: this is horrible
@@ -97,22 +98,28 @@ public class TargetDummyModel<T extends TargetDummyEntity> extends HumanoidModel
     public void prepareMobModel(T entity, float limbSwing, float limbSwingAmount, float partialTick) {
         super.prepareMobModel(entity, limbSwing, limbSwingAmount, partialTick);
         float phase = entity.getShake(partialTick);
-        float swing = entity.getAnimationPosition(partialTick);
-        float shake = Math.min((float) (swing * ClientConfigs.ANIMATION_INTENSITY.get()), 40f);
+        float unscaledSwingAmount = entity.getAnimationPosition(partialTick);
+        float swingAmount = Math.min((float) (unscaledSwingAmount * ClientConfigs.ANIMATION_INTENSITY.get()), 40f);
 
-        if (shake > 0) {
-            this.r = (float) -(Mth.sin(phase) * Math.PI / 100f * shake);
-            this.r2 = (float) (Mth.sin(phase) * Math.PI / 20f * Math.min(shake, 1));
+        if (swingAmount > 0) {
+            this.bodyWobble = (float) -(Mth.sin(phase) * Math.PI / 100f * swingAmount);
+            this.headSideWobble = (float) (Mth.sin(phase) * Math.PI / 20 * Math.min(swingAmount, 1));
         } else {
-            this.r = 0;
-            this.r2 = 0;
+            this.bodyWobble = 0;
+            this.headSideWobble = 0;
         }
 
-       // un-rotate the stand plate, so it's aligned to the block grid
-       this.standPlate.xRot = 0.0F;
-       this.standPlate.yRot =  Mth.DEG_TO_RAD * -Mth.rotLerp(partialTick, entity.yBodyRotO, entity.yBodyRot);
-       this.standPlate.zRot = 0.0F;
+        // un-rotate the stand plate, so it's aligned to the block grid
+        this.standPlate.xRot = 0.0F;
+        this.standPlate.yRot = Mth.DEG_TO_RAD * -Mth.rotLerp(partialTick, entity.yBodyRotO, entity.yBodyRot);
+        this.standPlate.zRot = 0.0F;
 
+        float recharge = entity.getRechargingAnimation(partialTick);
+        this.rechargingAnim = smoothRamp(recharge, 0.1);
+    }
+
+    private float smoothRamp(float number, double cutoff) {
+        return (float) (number < cutoff ? number / cutoff : 1);
     }
 
     @Override
@@ -125,8 +132,7 @@ public class TargetDummyModel<T extends TargetDummyEntity> extends HumanoidModel
 
         float yOffsetIn = -1;
 
-        float xangle = r / 2;
-
+        float xangle = bodyWobble / 2;
 
         this.leftLeg.setPos(0, 12.0F + yOffsetIn, 0.0F);
         this.rotateModelX(this.leftLeg, 0, 24 + yOffsetIn, 0, xangle);
@@ -137,7 +143,6 @@ public class TargetDummyModel<T extends TargetDummyEntity> extends HumanoidModel
         this.body.setPos(0.0F, 0.0F + yOffsetIn, 0.0F);
         this.rotateModelX(this.body, 0, 24 + yOffsetIn, 0, xangle);
 
-
         this.rightArm.setPos(-2.5F, 2.0F + yOffsetIn, -0.005F);
         this.rotateModelY(this.rightArm, 0, 24 + yOffsetIn, 0, xangle, -1);
 
@@ -146,21 +151,26 @@ public class TargetDummyModel<T extends TargetDummyEntity> extends HumanoidModel
 
 
         this.head.setPos(0.0F, 0.0F + yOffsetIn, 0.0F);
+
+
         this.rotateModelX(this.head, 0, 24 + yOffsetIn, 0, xangle);
+        this.head.xRot = -bodyWobble + rechargingAnim * 0.8f; //-r
+        this.head.zRot = headSideWobble; //r2
+
         //mod support
         this.hat.copyFrom(this.head);
-
-
-        this.head.xRot = -r; //-r
-        this.head.zRot = r2; //r2
-
 
         //rotate arms up
         this.rightArm.zRot = (float) Math.PI / 2f;
         this.leftArm.zRot = -(float) Math.PI / 2f;
         //swing arm
-        this.rightArm.xRot = r * n;
-        this.leftArm.xRot = r * n;
+        this.rightArm.xRot = bodyWobble * n;
+        this.leftArm.xRot = bodyWobble * n;
+
+        this.leftArm.zRot += rechargingAnim * 0.25f;
+        this.rightArm.zRot += rechargingAnim * -0.25f;
+
+
     }
 
 }

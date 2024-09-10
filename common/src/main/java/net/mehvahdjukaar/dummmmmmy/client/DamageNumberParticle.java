@@ -25,11 +25,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static net.mehvahdjukaar.dummmmmmy.Dummmmmmy.DF1;
+import static net.mehvahdjukaar.dummmmmmy.Dummmmmmy.DF2;
+
 public class DamageNumberParticle extends Particle {
 
     private static final List<Float> POSITIONS = new ArrayList<>(Arrays.asList(0f, -0.25f, 0.12f, -0.12f, 0.25f));
-    private static final DecimalFormat DF2 = new DecimalFormat("#.##");
-    private static final DecimalFormat DF1 = new DecimalFormat("#.#");
 
     private final Font fontRenderer = Minecraft.getInstance().font;
 
@@ -143,9 +144,9 @@ public class DamageNumberParticle extends Particle {
             this.fadeout = this.age > (lifetime - length) ? ((float) lifetime - this.age) / length : 1;
 
             this.prevVisualDY = this.visualDY;
-            this.visualDY += this.yd;
+            this.visualDY += (float) this.yd;
             this.prevVisualDX = this.visualDX;
-            this.visualDX += this.xd;
+            this.visualDX += (float) this.xd;
 
             //spawn numbers in a sort of ellipse centered on his torso
             if (Math.sqrt(Mth.square(this.visualDX * 1.5) + Mth.square(this.visualDY - 1)) < 1.9 - 1) {

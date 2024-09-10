@@ -1,3 +1,1 @@
-- added boss mode. give a dummy a banner to have to have a boss bar
-- dummy can now show healing per second as well as DPS
-- many internal improvements
+added hay particles when hitting a dummy

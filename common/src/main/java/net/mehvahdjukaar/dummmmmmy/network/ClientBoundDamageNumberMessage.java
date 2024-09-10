@@ -13,10 +13,13 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
 public class ClientBoundDamageNumberMessage implements Message {
@@ -73,6 +76,9 @@ public class ClientBoundDamageNumberMessage implements Message {
                 int i = dummy.getNextNumberPos();
                 spawnParticle(entity, i);
             }
+            if(ClientConfigs.HAY_PARTICLES.get()){
+                spawnHay(entity);
+            }
         } else if (entity != null) {
             spawnParticle(entity, 0);
         }
@@ -96,5 +102,36 @@ public class ClientBoundDamageNumberMessage implements Message {
     }
 
 
+
+    private void spawnHay(Entity entity) {
+        var random = entity.level().random;
+        int amount = (int) (1 + Mth.map(this.damageAmount, 0, 40, 0, 10));
+        for (int i = 0; i < amount; i++) {
+            Vec3 pos = new Vec3(entity.getRandomX(0.5),
+                    entity.getY() + 0.75 + random.nextFloat() * 0.85,
+                    entity.getRandomZ(0.5));
+            Vec3 speed = getOutwardSpeed(pos.subtract(entity.position()), random);
+            entity.level().addParticle(Dummmmmmy.HAY_PARTICLE.get(), pos.x, pos.y, pos.z,
+                    speed.x, random.nextFloat() * 0.04,
+                    speed.z);
+        }
+    }
+
+    public static Vec3 getOutwardSpeed(Vec3 position, RandomSource random) {
+
+        // Normalize the vector to get the direction
+        Vec3 direction = position.normalize();
+
+        // Apply random rotation variation
+        float randomLen = 0.02f + random.nextFloat() * 0.04f;
+        float angleVariation = (float) (random.nextGaussian() * 0.3f); // variation up to ±22.5 degrees
+        float sin =  Mth.sin(angleVariation);
+        float cos =  Mth.cos(angleVariation);
+
+        double newX = direction.x * cos - direction.z * sin;
+        double newY = direction.x * sin + direction.z * cos;
+
+        return new Vec3(newX*randomLen,0, newY*randomLen);
+    }
 }
 

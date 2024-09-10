@@ -81,6 +81,7 @@ public class CommonConfigs {
         builder.pop();
 
         SPEC = builder.buildAndRegister();
+        SPEC.loadFromFile();
     }
 
     public enum DpsMode {

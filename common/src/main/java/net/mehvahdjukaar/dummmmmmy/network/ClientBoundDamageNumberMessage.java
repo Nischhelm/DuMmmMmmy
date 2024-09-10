@@ -78,7 +78,7 @@ public record ClientBoundDamageNumberMessage
         int amount = (int) (1 + Mth.map(this.damageAmount, 0, 40, 0, 10));
         for (int i = 0; i < amount; i++) {
             Vec3 pos = new Vec3(entity.getRandomX(0.5),
-                    entity.getY() + 0.75 + random.nextFloat() * 0.8,
+                    entity.getY() + 0.75 + random.nextFloat() * 0.85,
                     entity.getRandomZ(0.5));
             Vec3 speed = getOutwardSpeed(pos.subtract(entity.position()), random);
             entity.level().addParticle(Dummmmmmy.HAY_PARTICLE.get(), pos.x, pos.y, pos.z,
@@ -93,8 +93,8 @@ public record ClientBoundDamageNumberMessage
         Vec3 direction = position.normalize();
 
         // Apply random rotation variation
-        float randomLen = 0.02f + random.nextFloat() * 0.07f;
-        float angleVariation = (float) (random.nextGaussian() * 0.2f); // variation up to ±22.5 degrees
+        float randomLen = 0.02f + random.nextFloat() * 0.04f;
+        float angleVariation = (float) (random.nextGaussian() * 0.3f); // variation up to ±22.5 degrees
         float sin =  Mth.sin(angleVariation);
         float cos =  Mth.cos(angleVariation);
 

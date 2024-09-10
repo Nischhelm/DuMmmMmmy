@@ -122,7 +122,7 @@ public class TargetDummyEntity extends Mob {
     @Override
     public void onSyncedDataUpdated(EntityDataAccessor<?> dataAccessor) {
         super.onSyncedDataUpdated(dataAccessor);
-        if(dataAccessor == BOSS){
+        if (dataAccessor == BOSS) {
             this.playersTracker.showHealthBar(this.isBoss());
         }
     }
@@ -275,7 +275,7 @@ public class TargetDummyEntity extends Mob {
     // same as super just spawns higher
     @Override
     public Set<EquipmentSlot> dropPreservedEquipment(Predicate<ItemStack> predicate) {
-        Set<EquipmentSlot> set = new HashSet();
+        Set<EquipmentSlot> set = new HashSet<>();
 
         for (EquipmentSlot equipmentSlot : EquipmentSlot.values()) {
             ItemStack itemStack = this.getItemBySlot(equipmentSlot);
@@ -291,7 +291,6 @@ public class TargetDummyEntity extends Mob {
                 }
             }
         }
-
 
 
         return set;
@@ -413,6 +412,7 @@ public class TargetDummyEntity extends Mob {
                 return false;
             }
         }
+
         if (level().isClientSide) return false;
         //for recursion
         var old = currentDamageSource;
@@ -427,6 +427,7 @@ public class TargetDummyEntity extends Mob {
         this.currentDamageSource = old;
         //set to zero to disable a red glow that happens when hurt
         this.hurtTime = 0;
+
 
         return result;
     }

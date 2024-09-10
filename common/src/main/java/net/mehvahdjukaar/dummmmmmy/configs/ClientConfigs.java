@@ -36,6 +36,7 @@ public class ClientConfigs {
     public static final Supplier<Boolean> DAMAGE_NUMBERS;
     public static final Supplier<Boolean> LIT_UP_PARTICLES;
     public static final Supplier<CritMode> CRIT_MODE;
+    public static final Supplier<Boolean> HAY_PARTICLES;
 
     public static final Supplier<Map<IdOrTagPredicate, Integer>> DAMAGE_TO_COLORS;
 
@@ -74,7 +75,8 @@ public class ClientConfigs {
                 .define("full_bright_damage_numbers", true);
         CRIT_MODE = PlatHelper.getPlatform().isForge() ? builder.comment("How crits should be shown")
                 .define("crit_mode", CritMode.COLOR_AND_MULTIPLIER) : () -> CritMode.OFF;
-
+        HAY_PARTICLES = builder.comment("Show hay particles when dealing damage")
+                .define("hay_particles", true);
         SKIN = builder.comment("Skin used by the dummy").define("texture", SkinType.DEFAULT);
 
 
@@ -121,8 +123,8 @@ public class ClientConfigs {
     public enum SkinType {
         DEFAULT("dummy", "dummy_h"),
         ORIGINAL("dummy_1", "dummy_1"),
-        DUNGEONS("dummy_3", "dummy_3_h"),
-        ALTERNATIVE("dummy_2", "dummy_2_h");
+        ALTERNATIVE("dummy_3", "dummy_3_h"),
+        DUNGEONS("dummy_2", "dummy_2_h");
 
         private final ResourceLocation texture;
         private final ResourceLocation shearedTexture;

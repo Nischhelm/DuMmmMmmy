@@ -31,7 +31,7 @@ public class TargetDummyModel<T extends TargetDummyEntity> extends HumanoidModel
         PartDefinition partdefinition = meshdefinition.getRoot();
         partdefinition.addOrReplaceChild("stand", CubeListBuilder.create()
                         .texOffs(0, 32)
-                        .addBox(-7.0F, 12F, -7.0F, 14F, 1F, 14F, deformation),
+                        .addBox(-6.0F, 12F, -6.0F, 12F, 1F, 12F, deformation),
                 PartPose.offset(0.0F, 11.0F, 0.0F));
 
         partdefinition.addOrReplaceChild("right_arm", CubeListBuilder.create()

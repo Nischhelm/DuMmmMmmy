@@ -6,6 +6,7 @@ import net.mehvahdjukaar.dummmmmmy.configs.CommonConfigs;
 import net.mehvahdjukaar.dummmmmmy.network.ClientBoundDamageNumberMessage;
 import net.mehvahdjukaar.dummmmmmy.network.ClientBoundUpdateAnimationMessage;
 import net.mehvahdjukaar.dummmmmmy.network.NetworkHandler;
+import net.mehvahdjukaar.moonlight.api.fluids.SoftFluid;
 import net.mehvahdjukaar.moonlight.api.platform.ForgeHelper;
 import net.mehvahdjukaar.moonlight.api.platform.PlatHelper;
 import net.minecraft.core.BlockPos;
@@ -35,6 +36,7 @@ import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.boss.wither.WitherBoss;
+import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.*;
 import net.minecraft.world.level.Level;
@@ -693,6 +695,7 @@ public class TargetDummyEntity extends Mob {
 
     @Override
     protected boolean isImmobile() {
+        SoftFluid
         return true;
     }
 

@@ -96,6 +96,7 @@ dependencies {
     shadowCommon(project(path: ":common", configuration: "transformProductionNeoForge")) { transitive = false }
 
     modImplementation("net.mehvahdjukaar:moonlight-neoforge:${moonlight_version}")
+    //modImplementation("curse.maven:l2weaponry-843723:5705239")
 
     implementation 'org.jetbrains:annotations:22.0.0'
 

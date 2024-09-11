@@ -76,6 +76,7 @@ public record ClientBoundDamageNumberMessage
     private void spawnHay(Entity entity) {
         var random = entity.getRandom();
         int amount = (int) (1 + Mth.map(this.damageAmount, 0, 40, 0, 10));
+        amount  = Math.min(amount, 10);
         for (int i = 0; i < amount; i++) {
             Vec3 pos = new Vec3(entity.getRandomX(0.5),
                     entity.getY() + 0.75 + random.nextFloat() * 0.85,

@@ -106,6 +106,7 @@ public class ClientBoundDamageNumberMessage implements Message {
     private void spawnHay(Entity entity) {
         var random = entity.level().random;
         int amount = (int) (1 + Mth.map(this.damageAmount, 0, 40, 0, 10));
+        amount = Mth.clamp(amount, 0, 10);
         for (int i = 0; i < amount; i++) {
             Vec3 pos = new Vec3(entity.getRandomX(0.5),
                     entity.getY() + 0.75 + random.nextFloat() * 0.85,

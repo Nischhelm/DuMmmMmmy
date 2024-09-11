@@ -695,7 +695,6 @@ public class TargetDummyEntity extends Mob {
 
     @Override
     protected boolean isImmobile() {
-        SoftFluid
         return true;
     }
 

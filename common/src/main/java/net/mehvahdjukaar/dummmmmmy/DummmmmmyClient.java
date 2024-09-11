@@ -1,6 +1,7 @@
 package net.mehvahdjukaar.dummmmmmy;
 
 import net.mehvahdjukaar.dummmmmmy.client.DamageNumberParticle;
+import net.mehvahdjukaar.dummmmmmy.client.HayParticle;
 import net.mehvahdjukaar.dummmmmmy.client.TargetDummyModel;
 import net.mehvahdjukaar.dummmmmmy.client.TargetDummyRenderer;
 import net.mehvahdjukaar.moonlight.api.platform.ClientHelper;
@@ -41,6 +42,7 @@ public class DummmmmmyClient {
 
     private static void registerParticles(ClientHelper.ParticleEvent event) {
         event.register(Dummmmmmy.NUMBER_PARTICLE.get(), DamageNumberParticle.Factory::new);
+        event.register(Dummmmmmy.HAY_PARTICLE.get(), HayParticle.Factory::new);
     }
 
 

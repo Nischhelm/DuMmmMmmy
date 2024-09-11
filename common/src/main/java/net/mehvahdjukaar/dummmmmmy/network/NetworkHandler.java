@@ -17,9 +17,6 @@ public class NetworkHandler {
         CHANNEL.register(NetworkDir.PLAY_TO_CLIENT, ClientBoundUpdateAnimationMessage.class,
                 ClientBoundUpdateAnimationMessage::new);
 
-        CHANNEL.register(NetworkDir.PLAY_TO_CLIENT, ClientBoundSyncEquipMessage.class,
-                ClientBoundSyncEquipMessage::new);
-
     }
 
 

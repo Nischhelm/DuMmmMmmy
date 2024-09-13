@@ -1,1 +1,1 @@
-added hay particles when hitting a dummy
+fixed an issue with very high damage values spawning way too many particles

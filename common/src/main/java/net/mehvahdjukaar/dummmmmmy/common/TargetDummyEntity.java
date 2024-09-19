@@ -764,11 +764,6 @@ public class TargetDummyEntity extends Mob {
     }
 
     @Override
-    public boolean attackable() {
-        return false;
-    }
-
-    @Override
     public void stopSeenByPlayer(ServerPlayer serverPlayer) {
         super.stopSeenByPlayer(serverPlayer);
         this.playersTracker.unTrack(serverPlayer);

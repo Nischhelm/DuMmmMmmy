@@ -250,6 +250,13 @@ public class TargetDummyEntity extends Mob {
         this.setItemSlotAndDropWhenKilled(slot, armor);
     }
 
+    @Override
+    public void remove(RemovalReason reason) {
+        super.remove(reason);
+        //clears boss bar when killed
+        this.setBoss(false);
+    }
+
     @Nullable
     private EquipmentSlot getClickedSlot(Vec3 vec3) {
         EquipmentSlot equipmentSlot = null;
@@ -695,6 +702,11 @@ public class TargetDummyEntity extends Mob {
 
     @Override
     protected boolean isImmobile() {
+        return true;
+    }
+
+    @Override
+    public boolean isIgnoringBlockTriggers() {
         return true;
     }
 

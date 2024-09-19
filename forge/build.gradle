@@ -116,4 +116,8 @@ dependencies {
     implementation(include("io.github.llamalad7:mixinextras-forge:${mixin_extras_version}"))
     annotationProcessor 'net.fabricmc:sponge-mixin:0.12.5+mixin.0.8.5'
 
+    implementation("curse.maven:citadel-331936:4786380")
+    implementation("curse.maven:alexs-mobs-426558:5698791")
+
+
 }

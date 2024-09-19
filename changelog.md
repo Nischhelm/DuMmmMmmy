@@ -1,1 +1,3 @@
-- fixed hay particles not showing
+- dummy boss bar will be removed when dummy is killed
+- dummy will no longer trigger pressure plates
+- added es_mx translation

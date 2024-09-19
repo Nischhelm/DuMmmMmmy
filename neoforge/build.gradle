@@ -101,4 +101,8 @@ dependencies {
     implementation 'org.jetbrains:annotations:22.0.0'
 
 
+    implementation("curse.maven:citadel-331936:4786380")
+    implementation("curse.maven:alexs-mobs-426558:5698791")
+
+
 }

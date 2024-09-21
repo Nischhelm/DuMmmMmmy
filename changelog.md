@@ -1,3 +1,1 @@
-- dummy boss bar will be removed when dummy is killed
-- dummy will no longer trigger pressure plates
-- added es_mx translation
+- target dummy scarecrow and dummy feture will now always work on fabric

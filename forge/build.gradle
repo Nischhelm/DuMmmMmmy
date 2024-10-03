@@ -111,13 +111,14 @@ dependencies {
     modImplementation ("curse.maven:apotheosis-313970:4714951")
     modImplementation ("curse.maven:placebo-283644:4711254")
     modImplementation ("curse.maven:apothic-attributes-898963:4721213")
+    modImplementation ("curse.maven:champions-unofficial-1074990:5698706")
     //modImplementation ("curse.maven:configured-457570:4011355")
     implementation(annotationProcessor("io.github.llamalad7:mixinextras-common:${mixin_extras_version}"))
     implementation(include("io.github.llamalad7:mixinextras-forge:${mixin_extras_version}"))
     annotationProcessor 'net.fabricmc:sponge-mixin:0.12.5+mixin.0.8.5'
 
-    implementation("curse.maven:citadel-331936:4786380")
-    implementation("curse.maven:alexs-mobs-426558:5698791")
 
+    modCompileOnly("curse.maven:citadel-331936:4786380")
+    modCompileOnly("curse.maven:alexs-mobs-426558:5698791")
 
 }

@@ -1,1 +1,1 @@
-- target dummy scarecrow and dummy feture will now always work on fabric
+fixed some enchantment code keeping the server level loaded in memory when in the main screen

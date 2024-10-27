@@ -18,7 +18,9 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
@@ -37,16 +39,16 @@ public class ClientBoundDamageNumberMessage implements Message {
         this.critMult = isCrit ? buf.readFloat() : 0;
     }
 
-    public ClientBoundDamageNumberMessage(int id, float damage, DamageSource source, @Nullable CritRecord critical) {
-        this(id, damage, encodeDamage(source), critical != null, critical == null ? 0 : critical.getMultiplier());
+    public ClientBoundDamageNumberMessage(LivingEntity e, float damage, DamageSource source, @Nullable CritRecord critical) {
+        this(e.getId(), damage, encodeDamage(e.level(), source), critical != null, critical == null ? 0 : critical.getMultiplier());
     }
 
-    public static ResourceLocation encodeDamage(DamageSource source) {
+    public static ResourceLocation encodeDamage(Level level, DamageSource source) {
         if (source == null) return Dummmmmmy.TRUE_DAMAGE;
         //if (critical) return Dummmmmmy.CRITICAL_DAMAGE;
         DamageType damageType = source.type();
         if(damageType == null) throw new AssertionError("Damage source has null type. How?: " + source);
-        var id = Utils.hackyGetRegistry(Registries.DAMAGE_TYPE).getKey(damageType);
+        var id = level.registryAccess().registryOrThrow(Registries.DAMAGE_TYPE).getKey(damageType);
         if (id == null) throw new AssertionError("Damage type not found in registry. This is a bug from that mod that added it!: " + damageType);
         return id;
     }

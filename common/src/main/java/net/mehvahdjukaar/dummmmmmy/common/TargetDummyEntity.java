@@ -554,7 +554,7 @@ public class TargetDummyEntity extends Mob {
 
             for (var p : this.playersTracker.getPlayers()) {
                 NetworkHandler.CHANNEL.sendToClientPlayer(p,
-                        new ClientBoundDamageNumberMessage(this.getId(), damage, source, critRec));
+                        new ClientBoundDamageNumberMessage(this, damage, source, critRec));
             }
             if (critRec != null) {
                 this.critRecordsThisTick.remove(critRec);

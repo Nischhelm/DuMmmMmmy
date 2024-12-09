@@ -1,1 +1,1 @@
-fixed some enchantment code keeping the server level loaded in memory when in the main screen
+- changed how goals are added to entities on fabric since fabric spawn event is no good

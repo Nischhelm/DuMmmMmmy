@@ -64,6 +64,7 @@ public class ModEvents {
     //add goal
     @EventCalled
     public static void onEntityJoinWorld(Entity entity) {
+        if (entity.level().isClientSide) return;
         if (entity instanceof PathfinderMob mob && canBeScaredByScarecrow(entity)) {
             mob.goalSelector.addGoal(0, new AvoidEntityGoal<>(mob, TargetDummyEntity.class,
                     CommonConfigs.RADIUS.get(), 1.0D, 1.3D, d -> ((TargetDummyEntity) d).canScare()));

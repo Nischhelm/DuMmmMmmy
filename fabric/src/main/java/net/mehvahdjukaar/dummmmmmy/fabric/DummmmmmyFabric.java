@@ -15,13 +15,7 @@ public class DummmmmmyFabric implements ModInitializer {
         if (PlatHelper.isModLoaded("lithium")) {
             Dummmmmmy.LOGGER.warn("Lithium detected. MmmMmmMmmMmm scarecrow mode might not work well due to a lithium bug (the mod doesnt have a way to add goals to new entities)");
         }
-        ServerEntityEvents.ENTITY_LOAD.register((e, w) -> {
-            try {
-                ModEvents.onEntityJoinWorld(e);
-            } catch (Exception ex) {
-                Dummmmmmy.LOGGER.error("Error adding scarecrow goal to entity", ex);
-            }
-        });
+
 
     }
 }

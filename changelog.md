@@ -1,1 +1,1 @@
-- target dummy scarecrow and dummy feture will now always work on fabric
+- changed how goals are added to entities on fabric since fabric spawn event is no good

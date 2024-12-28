@@ -1,7 +1,0 @@
-{
-  "values": [
-    "#minecraft:is_explosion",
-    {"id":"attributeslib:detonation","required":false},
-    {"id":"attributeslib:explosion","required":false}
-  ]
-}

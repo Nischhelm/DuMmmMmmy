@@ -1,6 +1,0 @@
-{
-  "values": [
-    "minecraft:dragon_head",
-    {"id":"moremobheads:spider_head","required":false}
-  ]
-}

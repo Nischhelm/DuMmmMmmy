@@ -1,7 +1,0 @@
-{
-  "values": [
-    "#minecraft:is_fire",
-    {"id":"attributeslib:fire_damage","required":false},
-    {"id":"attributeslib:fire","required":false}
-  ]
-}

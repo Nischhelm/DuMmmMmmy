@@ -1,1 +1,0 @@
-- changed how goals are added to entities on fabric since fabric spawn event is no good

@@ -1,9 +1,10 @@
 package testdummy2.entity;
 
 import io.netty.buffer.ByteBuf;
+import net.minecraft.entity.EntityLiving;
+import net.minecraft.entity.MoverType;
 import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.entity.ai.attributes.AttributeModifier;
-import net.minecraft.entity.monster.EntityMob;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.item.Item;
@@ -26,7 +27,7 @@ import testdummy2.network.SyncEquipmentMessage;
 import java.util.Arrays;
 import java.util.UUID;
 
-public class EntityDummy extends EntityMob implements IEntityAdditionalSpawnData {
+public class EntityDummy extends EntityLiving implements IEntityAdditionalSpawnData {
     public float shake;
     public float shakeAnimation;
     private float lastDamage;
@@ -165,7 +166,7 @@ public class EntityDummy extends EntityMob implements IEntityAdditionalSpawnData
         }
 
         //Don't count fire or other side dmgs (potions) that happened since last hit
-        this.setHealth(defaultHealth);
+        this.setHealth(this.getMaxHealth());
 
         //Vanilla dmg calc
         if(ConfigHandler.server.useIframes) {
@@ -195,7 +196,7 @@ public class EntityDummy extends EntityMob implements IEntityAdditionalSpawnData
             float healthLost = this.getMaxHealth() - this.getHealth();
             damage += healthLost;
         }
-        this.setHealth(defaultHealth);
+        this.setHealth(this.getMaxHealth());
 
         this.shake = Math.min(damage, 30.0F);
         this.lastDamageTick = this.ticksExisted;
@@ -275,6 +276,12 @@ public class EntityDummy extends EntityMob implements IEntityAdditionalSpawnData
 
     protected boolean isMovementBlocked() {
         return true;
+    }
+
+    @Override
+    public void move(MoverType type, double x, double y, double z) {
+        motionX = motionY = motionZ = 0F;
+        //cancel movement fully
     }
 
     protected boolean canDespawn() {
